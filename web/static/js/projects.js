@@ -636,7 +636,7 @@ async function initProjectsPage() {
     renderProjectsPagination();
     await loadProjectsList();
     if (!currentProjectId && projectsCache.length) {
-        const fromHash = new URLSearchParams(window.location.hash.split('?')[1] || '').get('id');
+        const fromHash = new URLSearchParams((typeof getRoutePath === 'function' ? getRoutePath() : '').split('?')[1] || '').get('id');
         currentProjectId = fromHash || projectsCache[0].id;
     }
     renderProjectsSidebar();
@@ -1856,7 +1856,7 @@ function openVulnerabilitiesForProject(projectId) {
     if (typeof window.setVulnerabilityProjectFilter === 'function') {
         window.setVulnerabilityProjectFilter(pid);
     } else {
-        window.location.hash = `vulnerabilities?project_id=${encodeURIComponent(pid)}`;
+        setRoutePath(`vulnerabilities?project_id=${encodeURIComponent(pid)}`);
     }
 }
 

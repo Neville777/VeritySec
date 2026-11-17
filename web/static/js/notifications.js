@@ -134,21 +134,19 @@
     function openNotificationTarget(item) {
         if (!item || !item.type) return;
         if (item.type === 'vulnerability_created' && item.vulnerabilityId) {
-            window.location.hash = 'vulnerabilities?id=' + encodeURIComponent(item.vulnerabilityId);
+            setRoutePath('vulnerabilities?id=' + encodeURIComponent(item.vulnerabilityId));
             return;
         }
         if ((item.type === 'task_completed' || item.type === 'long_running_tasks') && item.conversationId) {
-            // Use the session navigation entry provided by the router. Changing the hash directly triggers hashchange first
-            // to switch pages, and then the router lazy-loads the session, causing a visible extra flicker.
             if (typeof window.navigateToConversation === 'function') {
                 window.navigateToConversation(item.conversationId);
             } else {
-                window.location.hash = 'chat?conversation=' + encodeURIComponent(item.conversationId);
+                setRoutePath('chat?conversation=' + encodeURIComponent(item.conversationId));
             }
             return;
         }
         if (item.type === 'task_failed' && item.executionId) {
-            window.location.hash = 'mcp-monitor';
+            setRoutePath('mcp-monitor');
             setTimeout(function () {
                 if (typeof showMCPDetail === 'function') {
                     showMCPDetail(item.executionId);
@@ -157,14 +155,14 @@
             return;
         }
         if (item.type === 'hitl_pending') {
-            window.location.hash = 'hitl';
+            setRoutePath('hitl');
             return;
         }
         if (item.type === 'c2_session_online' && item.sessionId) {
             if (typeof window.switchPage === 'function') {
                 window.switchPage('c2-sessions');
             } else {
-                window.location.hash = 'c2-sessions';
+                setRoutePath('c2-sessions');
             }
             const sid = item.sessionId;
             window.setTimeout(function () {

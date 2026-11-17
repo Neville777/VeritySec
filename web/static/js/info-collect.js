@@ -1311,7 +1311,7 @@ function scanFofaRow(encodedRowJson, clickEvent) {
     if (typeof switchPage === 'function') {
         switchPage('chat');
     } else {
-        window.location.hash = 'chat';
+        setRoutePath('chat');
     }
 
     const message = buildScanMessage(target, row, { fields });

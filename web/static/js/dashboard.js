@@ -1777,7 +1777,7 @@ function navigateToVulnerabilitiesWithFilter(opts) {
     if (opts.severity) params.set('severity', opts.severity);
     if (opts.status) params.set('status', opts.status);
     var qs = params.toString();
-    window.location.hash = qs ? 'vulnerabilities?' + qs : 'vulnerabilities';
+    setRoutePath(qs ? 'vulnerabilities?' + qs : 'vulnerabilities');
 }
 window.navigateToVulnerabilitiesWithFilter = navigateToVulnerabilitiesWithFilter;
 

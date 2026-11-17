@@ -7,7 +7,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=1 GOOS=linux go build -o veritysec ./cmd/server
+RUN CGO_ENABLED=1 CGO_CFLAGS="-D_LARGEFILE64_SOURCE" GOOS=linux go build -o veritysec ./cmd/server
 
 # --- Runtime ---
 FROM alpine:3.20

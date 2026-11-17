@@ -1207,12 +1207,12 @@ function openAssetVulnerabilities(index) {
     const asset = assetPageState.items[Number(index)];
     if (!asset) return;
     if (asset.last_scan_task_id) {
-        window.location.hash = `vulnerabilities?task_id=${encodeURIComponent(asset.last_scan_task_id)}`;
+        setRoutePath(`vulnerabilities?task_id=${encodeURIComponent(asset.last_scan_task_id)}`);
         return;
     }
-    window.location.hash = asset.last_scan_conversation_id
+    setRoutePath(asset.last_scan_conversation_id
         ? `vulnerabilities?conversation_id=${encodeURIComponent(asset.last_scan_conversation_id)}`
-        : 'vulnerabilities';
+        : 'vulnerabilities');
 }
 
 function renderAssetPagination() {

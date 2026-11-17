@@ -1544,7 +1544,7 @@ function deleteChatFileIdx(idx) {
 
 function openChatFilesConversation(conversationId) {
     if (!conversationId) return;
-    window.location.hash = 'chat?conversation=' + encodeURIComponent(conversationId);
+    setRoutePath('chat?conversation=' + encodeURIComponent(conversationId));
     if (typeof switchPage === 'function') {
         switchPage('chat');
     }

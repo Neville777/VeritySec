@@ -696,8 +696,9 @@ function switchSettingsSection(section) {
     // Unknown hash sections must not hide every settings panel.
     const requestedContent = document.getElementById(`settings-section-${section}`);
     if (!requestedContent) return;
-    if (window.location.hash.split('?')[0] === '#settings') {
-        history.replaceState(null, '', section === 'token-usage' ? '#settings?section=token-usage' : '#settings');
+    const curPath = typeof getRoutePath === 'function' ? getRoutePath() : '';
+    if (curPath.split('?')[0] === 'settings') {
+        setRoutePath(section === 'token-usage' ? 'settings?section=token-usage' : 'settings', true);
     }
 
     // Update nav item state

@@ -744,7 +744,7 @@ function viewConversation(conversationId) {
                 window.loadConversation(conversationId);
             } else {
                 // If the function does not exist, try navigating via URL
-                window.location.hash = `chat?conversation=${conversationId}`;
+                setRoutePath(`chat?conversation=${conversationId}`);
                 console.log('Switching to the chat page, conversation ID:', conversationId);
             }
         }, 500);
@@ -756,9 +756,9 @@ function navigateToVulnerabilitiesFromTasksPage(kind, id) {
     if (!id) return;
     const enc = encodeURIComponent(id);
     if (kind === 'queue') {
-        window.location.hash = 'vulnerabilities?task_id=' + enc;
+        setRoutePath('vulnerabilities?task_id=' + enc);
     } else if (kind === 'conversation') {
-        window.location.hash = 'vulnerabilities?conversation_id=' + enc;
+        setRoutePath('vulnerabilities?conversation_id=' + enc);
     }
 }
 
@@ -2194,9 +2194,7 @@ function viewBatchTaskConversation(conversationId) {
     // Close the batch task details modal
     closeBatchQueueDetailModal();
     
-    // Navigate directly via the URL hash so the router handles page switching and conversation loading
-    // This is more reliable, because the router ensures the page switch completes before loading the conversation
-    window.location.hash = `chat?conversation=${conversationId}`;
+    setRoutePath(`chat?conversation=${conversationId}`);
 }
 
 // --- Inline edit: task message ---

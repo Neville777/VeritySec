@@ -1769,13 +1769,15 @@ func setupRoutes(
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "landing.html", nil)
 	})
-	router.GET("/app", func(c *gin.Context) {
+	appHandler := func(c *gin.Context) {
 		version := app.config.Version
 		if version == "" {
 			version = "v1.0.0"
 		}
 		c.HTML(http.StatusOK, "index.html", gin.H{"Version": version})
-	})
+	}
+	router.GET("/app", appHandler)
+	router.GET("/app/*path", appHandler)
 }
 
 // registerWebshellTools registers WebShell-related MCP tools, for the AI assistant to execute commands and file operations on a specified connection

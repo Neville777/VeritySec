@@ -3,17 +3,19 @@ let currentConversationId = null;
 /** Persist the visible chat in the URL so a reload can restore and reconnect it. */
 function syncChatConversationHash(conversationId) {
     const normalizedConversationId = String(conversationId || '').trim();
-    if (!normalizedConversationId || window.location.hash.split('?')[0] !== '#chat') return;
-    const targetHash = '#chat?conversation=' + encodeURIComponent(normalizedConversationId);
-    if (window.location.hash !== targetHash) {
-        window.history.replaceState(null, '', targetHash);
+    const curPath = typeof getRoutePath === 'function' ? getRoutePath() : '';
+    if (!normalizedConversationId || curPath.split('?')[0] !== 'chat') return;
+    const targetPath = 'chat?conversation=' + encodeURIComponent(normalizedConversationId);
+    if (curPath !== targetPath) {
+        setRoutePath(targetPath, true);
     }
 }
 window.syncChatConversationHash = syncChatConversationHash;
 
 function clearChatConversationHash() {
-    if (window.location.hash.split('?')[0] !== '#chat' || window.location.hash === '#chat') return;
-    window.history.replaceState(null, '', '#chat');
+    const curPath = typeof getRoutePath === 'function' ? getRoutePath() : '';
+    if (curPath.split('?')[0] !== 'chat' || curPath === 'chat') return;
+    setRoutePath('chat', true);
 }
 window.clearChatConversationHash = clearChatConversationHash;
 let loadConversationRequestSeq = 0;
@@ -10884,7 +10886,7 @@ function navigateToVulnerabilitiesForContextConversation() {
         return;
     }
     closeContextMenu();
-    window.location.hash = 'vulnerabilities?conversation_id=' + encodeURIComponent(convId);
+    setRoutePath('vulnerabilities?conversation_id=' + encodeURIComponent(convId));
 }
 
 // Delete conversation from context menu

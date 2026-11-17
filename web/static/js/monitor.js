@@ -7253,7 +7253,7 @@ function renderActiveTasks(tasks) {
             }, 120);
             return;
         }
-        window.location.hash = 'chat?conversation=' + encodeURIComponent(conversationId);
+        setRoutePath('chat?conversation=' + encodeURIComponent(conversationId));
     }
 
     normalizedTasks.forEach(task => {

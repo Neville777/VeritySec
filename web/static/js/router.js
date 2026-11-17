@@ -1,12 +1,47 @@
-// Page routing management
+// Page routing management — history-based (no # in URLs)
 let currentPage = null;
+
+const APP_BASE = '/app';
+
+/** Read the current route path (e.g. "chat?conversation=abc") */
+function getRoutePath() {
+    const pathname = window.location.pathname;
+    const prefix = APP_BASE + '/';
+    let path = '';
+    if (pathname === APP_BASE || pathname === APP_BASE + '/') {
+        path = '';
+    } else if (pathname.startsWith(prefix)) {
+        path = pathname.slice(prefix.length);
+    }
+    const search = window.location.search;
+    if (search) {
+        path += search;
+    }
+    return path;
+}
+window.getRoutePath = getRoutePath;
+
+/** Set the route path via pushState (e.g. "dashboard", "chat?conversation=abc") */
+function setRoutePath(path, replace) {
+    const clean = (path || '').replace(/^[#/]+/, '');
+    const parts = clean.split('?');
+    const pagePart = parts[0] || '';
+    const queryPart = parts.length > 1 ? '?' + parts.slice(1).join('?') : '';
+    const url = APP_BASE + (pagePart ? '/' + pagePart : '') + queryPart;
+    if (replace) {
+        history.replaceState(null, '', url);
+    } else {
+        history.pushState(null, '', url);
+    }
+}
+window.setRoutePath = setRoutePath;
 
 /** Preserve the query string (session ID or settings section) when switching between chat, vulnerability management and settings pages. */
 function buildHashForPage(pageId) {
     if (pageId !== 'chat' && pageId !== 'vulnerabilities' && pageId !== 'settings') {
         return pageId;
     }
-    const full = window.location.hash.slice(1);
+    const full = getRoutePath();
     const parts = full.split('?');
     const curPage = parts[0];
     const q = parts.length > 1 ? parts.slice(1).join('?') : '';
@@ -45,8 +80,8 @@ function finishChatConversationRestore(conversationId) {
 window.finishChatConversationRestore = finishChatConversationRestore;
 
 function scheduleChatConversationFromHash(delayMs) {
-    const hash = window.location.hash.slice(1);
-    const hashParts = hash.split('?');
+    const full = getRoutePath();
+    const hashParts = full.split('?');
     if (hashParts[0] !== 'chat' || hashParts.length < 2) {
         return;
     }
@@ -62,7 +97,6 @@ function scheduleChatConversationFromHash(delayMs) {
     if (!conversationId) {
         return;
     }
-    // Hide the default new-chat state within the same event loop, to avoid flashing "no project" before the network request returns.
     setChatConversationRestorePending(conversationId, true);
     const token = ++chatConversationFromHashSeq;
     setTimeout(() => {
@@ -79,15 +113,15 @@ function scheduleChatConversationFromHash(delayMs) {
     }, delayMs);
 }
 
-/** Jump to a specific conversation: a single page switch + a single load, to avoid duplicate triggers between hashchange and manual load causing flicker */
+/** Jump to a specific conversation: a single page switch + a single load, to avoid duplicate triggers between popstate and manual load causing flicker */
 function navigateToConversation(conversationId) {
     const cid = String(conversationId || '').trim();
     if (!cid) return;
-    const targetHash = 'chat?conversation=' + encodeURIComponent(cid);
+    const targetPath = 'chat?conversation=' + encodeURIComponent(cid);
     const alreadyOnChat = currentPage === 'chat';
 
-    if (window.location.hash.slice(1) !== targetHash) {
-        history.replaceState(null, '', '#' + targetHash);
+    if (getRoutePath() !== targetPath) {
+        setRoutePath(targetPath, true);
     }
 
     if (!alreadyOnChat) {
@@ -104,13 +138,11 @@ window.navigateToConversation = navigateToConversation;
 
 // Initialize routing
 function initRouter() {
-    // Read the page from the URL hash (if any)
-    const hash = window.location.hash.slice(1);
-    if (hash) {
-        const hashParts = hash.split('?');
-        let pageId = hashParts[0].replace(/^#?\//, '');
+    const full = getRoutePath();
+    if (full) {
+        const hashParts = full.split('?');
+        let pageId = hashParts[0].replace(/^[#/]+/, '');
         if (pageId === 'c2') pageId = 'c2-listeners';
-        // The one-click update has been merged into the system settings page's section menu: the old #system-update deep link lands on that section of the settings page.
         const settingsSection = pageId === 'system-update' ? 'update' : pageId === 'settings' && new URLSearchParams(hashParts.slice(1).join('?')).get('section') === 'token-usage' ? 'token-usage' : '';
         if (settingsSection) pageId = 'settings';
         if (pageId && document.getElementById(`page-${pageId}`)) {
@@ -124,7 +156,7 @@ function initRouter() {
             return;
         }
     }
-    
+
     // Show the dashboard by default
     switchPage('dashboard');
 }
@@ -142,8 +174,8 @@ function switchPage(pageId) {
 
     if (currentPage === pageId && targetPage.classList.contains('active')) {
         const currentHash = buildHashForPage(pageId);
-        if (window.location.hash.slice(1) !== currentHash) {
-            window.location.hash = currentHash;
+        if (getRoutePath() !== currentHash) {
+            setRoutePath(currentHash);
         }
         initPage(pageId);
         return;
@@ -156,19 +188,19 @@ function switchPage(pageId) {
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
-    
+
     // Show the target page
     targetPage.classList.add('active');
     currentPage = pageId;
-        
+
     const newHash = buildHashForPage(pageId);
-    if (window.location.hash.slice(1) !== newHash) {
-        window.location.hash = newHash;
+    if (getRoutePath() !== newHash) {
+        setRoutePath(newHash);
     }
-        
+
     // Update navigation state
     updateNavState(pageId);
-        
+
     // Page-specific initialization
     initPage(pageId);
 
@@ -185,11 +217,11 @@ function updateNavState(pageId) {
         item.classList.remove('active');
         item.classList.remove('expanded');
     });
-    
+
     document.querySelectorAll('.nav-submenu-item').forEach(item => {
         item.classList.remove('active');
     });
-    
+
     // Set active state
     if (pageId === 'hitl' || pageId === 'tool-guard') {
         const securityItem = document.querySelector('.nav-item[data-page="security"]');
@@ -215,7 +247,7 @@ function updateNavState(pageId) {
             // Expand MCP submenu
             mcpItem.classList.add('expanded');
         }
-        
+
         const submenuItem = document.querySelector(`.nav-submenu-item[data-page="${pageId}"]`);
         if (submenuItem) {
             submenuItem.classList.add('active');
@@ -228,7 +260,7 @@ function updateNavState(pageId) {
             // Expand knowledge submenu
             knowledgeItem.classList.add('expanded');
         }
-        
+
         const submenuItem = document.querySelector(`.nav-submenu-item[data-page="${pageId}"]`);
         if (submenuItem) {
             submenuItem.classList.add('active');
@@ -241,7 +273,7 @@ function updateNavState(pageId) {
             // Expand Skills submenu
             skillsItem.classList.add('expanded');
         }
-        
+
         const submenuItem = document.querySelector(`.nav-submenu-item[data-page="${pageId}"]`);
         if (submenuItem) {
             submenuItem.classList.add('active');
@@ -275,7 +307,7 @@ function updateNavState(pageId) {
             // Expand role submenu
             rolesItem.classList.add('expanded');
         }
-        
+
         const submenuItem = document.querySelector(`.nav-submenu-item[data-page="${pageId}"]`);
         if (submenuItem) {
             submenuItem.classList.add('active');
@@ -301,9 +333,9 @@ function getNavSubmenuItems(navItem) {
 function toggleSubmenu(menuId) {
     const sidebar = document.getElementById('main-sidebar');
     const navItem = document.querySelector(`.nav-item[data-page="${menuId}"]`);
-    
+
     if (!navItem) return;
-    
+
     const collapsed = sidebar && sidebar.classList.contains('collapsed');
 
     // Check whether the sidebar is collapsed
@@ -335,7 +367,6 @@ function showSubmenuPopup(navItem, menuId) {
     if (existingPopup) {
         const sameMenu = existingPopup.dataset.menuId === menuId;
         existingPopup.remove();
-        // Clicking the same item again: only close; clicking another item: continue opening the new menu
         if (sameMenu) {
             return;
         }
@@ -343,13 +374,11 @@ function showSubmenuPopup(navItem, menuId) {
 
     const navItemContent = navItem.querySelector('.nav-item-content');
     const submenu = navItem.querySelector('.nav-submenu');
-    
+
     if (!submenu) return;
-    
-    // Get the menu position
+
     const rect = navItemContent.getBoundingClientRect();
-    
-    // Create the popup menu
+
     const popup = document.createElement('div');
     popup.className = 'submenu-popup';
     popup.dataset.menuId = menuId;
@@ -357,49 +386,43 @@ function showSubmenuPopup(navItem, menuId) {
     popup.style.left = (rect.right + 8) + 'px';
     popup.style.top = rect.top + 'px';
     popup.style.zIndex = '1000';
-    
-    // Copy submenu items into the popup menu
+
     const submenuItems = submenu.querySelectorAll('.nav-submenu-item');
     submenuItems.forEach(item => {
         if (item.hidden || (typeof permissionAllowedForElement === 'function' && !permissionAllowedForElement(item))) return;
         const popupItem = document.createElement('div');
         popupItem.className = 'submenu-popup-item';
         popupItem.textContent = item.textContent.trim();
-        
-        // Check whether this is the currently active page
+
         const pageId = item.getAttribute('data-page');
         if (pageId && document.querySelector(`.nav-submenu-item[data-page="${pageId}"].active`)) {
             popupItem.classList.add('active');
         }
-        
+
         popupItem.onclick = function(e) {
             e.stopPropagation();
             e.preventDefault();
-            
-            // Get the page ID and switch
+
             const pageId = item.getAttribute('data-page');
             if (pageId) {
                 switchPage(pageId);
             }
-            
-            // Close the popup menu
+
             popup.remove();
             document.removeEventListener('click', closePopup);
         };
         popup.appendChild(popupItem);
     });
-    
+
     document.body.appendChild(popup);
-    
-    // Click outside to close the popup menu
+
     const closePopup = function(e) {
         if (!popup.contains(e.target) && !navItem.contains(e.target)) {
             popup.remove();
             document.removeEventListener('click', closePopup);
         }
     };
-    
-    // Delay adding the event listener to avoid triggering immediately
+
     setTimeout(() => {
         document.addEventListener('click', closePopup);
     }, 0);
@@ -407,7 +430,6 @@ function showSubmenuPopup(navItem, menuId) {
 
 // Initialize page
 async function initPage(pageId) {
-    // Wait for i18n to be ready, to avoid showing raw placeholder keys when the translation function isn't initialized after a quick refresh
     if (window.i18nReady) await window.i18nReady;
     if (typeof stopExternalMcpPoll === 'function') {
         stopExternalMcpPoll();
@@ -419,7 +441,6 @@ async function initPage(pageId) {
             }
             break;
         case 'chat':
-            // Restore conversation list collapse state (keep the user's choice when returning from other pages)
             initConversationSidebarState();
             if (typeof prefetchProjectsForChat === 'function') {
                 prefetchProjectsForChat();
@@ -439,7 +460,6 @@ async function initPage(pageId) {
             }
             break;
         case 'info-collect':
-            // Information collection page
             if (typeof initInfoCollectPage === 'function') {
                 initInfoCollectPage();
             }
@@ -451,13 +471,11 @@ async function initPage(pageId) {
             if (typeof loadAssets === 'function') loadAssets();
             break;
         case 'tasks':
-            // Initialize task management page
             if (typeof initTasksPage === 'function') {
                 initTasksPage();
             }
             break;
         case 'mcp-monitor':
-            // Initialize monitoring dashboard
             if (typeof refreshMonitorPanel === 'function') {
                 refreshMonitorPanel();
             }
@@ -466,22 +484,16 @@ async function initPage(pageId) {
             }
             break;
         case 'mcp-management':
-            // Initialize MCP management
             const startLoadMcpTools = () => {
-                // Load the tool list (MCP tool configuration has moved to the MCP management page)
-                // Load asynchronously so it doesn't block page rendering
                 if (typeof loadToolsList === 'function') {
-                    // Ensure tool pagination settings are initialized
                     if (typeof getToolsPageSize === 'function' && typeof toolsPagination !== 'undefined') {
                         toolsPagination.pageSize = getToolsPageSize();
                     }
-                    // Delayed load, so the page renders first
                     setTimeout(() => {
                         loadToolsList(1, '').catch(err => {
                             console.error('Failed to load tool list:', err);
                         });
                     }, 100);
-                    // Security tool installs panel (same page); load it with the tool list
                     setTimeout(() => {
                         if (typeof loadToolInstalls === 'function') loadToolInstalls();
                     }, 150);
@@ -498,8 +510,6 @@ async function initPage(pageId) {
                     startExternalMcpPoll();
                 }
             };
-            // Fetch config first (including the always-on tool_search list), then load tools and external MCP.
-            // Users with only mcp:read don't need the full /api/config (which requires config:read).
             const canLoadFullConfig = typeof hasPermission !== 'function' || hasPermission('config:read');
             if (typeof loadConfig === 'function' && canLoadFullConfig) {
                 loadConfig(false, { silent: true })
@@ -520,13 +530,11 @@ async function initPage(pageId) {
             }
             break;
         case 'vulnerabilities':
-            // Initialize vulnerability management page
             if (typeof initVulnerabilityPage === 'function') {
                 initVulnerabilityPage();
             }
             break;
         case 'webshell':
-            // Initialize WebShell management page
             if (typeof initWebshellPage === 'function') {
                 initWebshellPage();
             }
@@ -537,26 +545,19 @@ async function initPage(pageId) {
             }
             break;
         case 'settings':
-            // Initialize settings page (does not need to load the tool list)
             if (typeof loadConfig === 'function') {
                 loadConfig(false);
             }
-            // Returning to the "One-click update" section: re-read install status and reconnect progress polling
-            // (polling stopped on leave; otherwise a stale progress display would remain)
             const updateSection = document.getElementById('settings-section-update');
             if (updateSection && updateSection.classList.contains('active') && typeof loadUpdateConsole === 'function') {
                 loadUpdateConsole();
             }
-            // Returning through the regular settings nav reloads a retained usage panel.
-            // Deep links are loaded by switchSettingsSection after switchPage returns.
             const tokenSection = document.getElementById('settings-section-token-usage');
-            if (tokenSection && tokenSection.classList.contains('active') && window.location.hash !== '#settings?section=token-usage' && typeof refreshTokenUsage === 'function') {
+            if (tokenSection && tokenSection.classList.contains('active') && getRoutePath() !== 'settings?section=token-usage' && typeof refreshTokenUsage === 'function') {
                 refreshTokenUsage();
             }
             break;
         case 'roles-management':
-            // Initialize role management page
-            // Reset search UI (variables update automatically on the next search)
             const rolesSearchInput = document.getElementById('roles-search');
             if (rolesSearchInput) {
                 rolesSearchInput.value = '';
@@ -618,14 +619,11 @@ async function initPage(pageId) {
             }
             break;
         case 'skills-monitor':
-            // Initialize Skills status monitoring page
             if (typeof loadSkillsMonitor === 'function') {
                 loadSkillsMonitor();
             }
             break;
         case 'skills-management':
-            // Initialize Skills management page
-            // Reset search UI (variables update automatically on the next search)
             const skillsSearchInput = document.getElementById('skills-search');
             if (skillsSearchInput) {
                 skillsSearchInput.value = '';
@@ -658,13 +656,10 @@ async function initPage(pageId) {
             }
             break;
     }
-    
-    // Clear timers of other pages
+
     if (pageId !== 'tasks' && typeof cleanupTasksPage === 'function') {
         cleanupTasksPage();
     }
-    // The progress polling for the one-click update works the same way: it now lives in the system settings page, so there's no need to read tasks every 1.5 seconds after leaving it
-    // (switching to another section within the same page is handled by settings.js's switchSettingsSection, which stops it).
     if (pageId !== 'settings' && typeof stopUpdatePolling === 'function') {
         stopUpdatePolling();
     }
@@ -675,19 +670,23 @@ async function initPage(pageId) {
 
 // Initialize routing after the page has loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Migrate old hash URLs to history URLs
+    if (window.location.hash && window.location.hash.length > 1) {
+        const hashPath = window.location.hash.slice(1).replace(/^[#/]+/, '');
+        setRoutePath(hashPath, true);
+    }
+
     initRouter();
     document.documentElement.classList.remove('initial-route-pending');
     initSidebarState();
-    
-    // Listen for hash changes
-    window.addEventListener('hashchange', function() {
-        const hash = window.location.hash.slice(1);
-        // Handle hashes with parameters (e.g. chat?conversation=xxx)
-        const hashParts = hash.split('?');
-        let pageId = hashParts[0].replace(/^#?\//, '');
-        
+
+    // Listen for browser back/forward
+    window.addEventListener('popstate', function() {
+        const full = getRoutePath();
+        const hashParts = full.split('?');
+        let pageId = hashParts[0].replace(/^[#/]+/, '');
+
         if (pageId === 'c2') pageId = 'c2-listeners';
-        // Same alias set as the initial parse: #system-update lands on the "One-click update" section of the system settings page.
         const settingsSection = pageId === 'system-update' ? 'update' : pageId === 'settings' && new URLSearchParams(hashParts.slice(1).join('?')).get('section') === 'token-usage' ? 'token-usage' : '';
         if (settingsSection) pageId = 'settings';
         if (pageId && document.getElementById(`page-${pageId}`)) {
@@ -707,7 +706,6 @@ function toggleSidebar() {
     const sidebar = document.getElementById('main-sidebar');
     if (sidebar) {
         sidebar.classList.toggle('collapsed');
-        // Save collapse state to localStorage
         const isCollapsed = sidebar.classList.contains('collapsed');
         localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false');
     }
@@ -750,5 +748,5 @@ function initConversationSidebarState() {
     }
 }
 
-// Export functions for use by other scripts (kept consistent with the early binding above, for easy detection by external scripts)
+// Export functions for use by other scripts
 window.currentPage = function() { return currentPage; };

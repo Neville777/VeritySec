@@ -11,11 +11,11 @@ function tokenUsageText(key, opts, fallback) {
 }
 
 function openDashboardTokenUsage() {
-    if (window.location.hash === '#settings?section=token-usage') {
+    if (getRoutePath() === 'settings?section=token-usage') {
         switchPage('settings');
         switchSettingsSection('token-usage');
     } else {
-        window.location.hash = 'settings?section=token-usage';
+        setRoutePath('settings?section=token-usage');
     }
 }
 

@@ -1190,7 +1190,7 @@
         patchRouter();
 
         /* Restore the highlight of the page last visited */
-        var hashPage = (window.location.hash || '').replace(/^#/, '').split('?')[0];
+        var hashPage = (typeof getRoutePath === 'function' ? getRoutePath() : '').split('?')[0];
         setActiveTab(hashPage || 'dashboard');
 
         if (!state.booted) {
