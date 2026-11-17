@@ -43,7 +43,7 @@ const configScript = `
 html = html.replace('</head>', configScript + '\n</head>');
 
 mkdirp(DIST);
-fs.writeFileSync(path.join(DIST, 'index.html'), html);
+fs.writeFileSync(path.join(DIST, 'app.html'), html);
 
 // 4. Copy landing page
 if (fs.existsSync(path.join(SRC, 'templates', 'landing.html'))) {
