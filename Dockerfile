@@ -16,7 +16,7 @@ RUN apk add --no-cache ca-certificates sqlite-libs tzdata
 
 WORKDIR /app
 COPY --from=builder /app/veritysec .
-COPY --from=builder /app/config.yaml .
+COPY --from=builder /app/config.example.yaml ./config.yaml
 COPY --from=builder /app/web ./web
 COPY --from=builder /app/tools ./tools
 COPY --from=builder /app/roles ./roles
