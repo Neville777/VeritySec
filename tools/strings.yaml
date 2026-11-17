@@ -1,0 +1,45 @@
+name: "strings"
+command: "strings"
+enabled: true
+short_description: "Extract strings from binary files"
+description: |
+  The Strings tool extracts printable strings from binary files.
+
+  **Key features:**
+  - String extraction
+  - Configurable minimum length
+  - Supports multiple file formats
+
+  **Use cases:**
+  - Binary analysis
+  - Malware analysis
+  - Forensic analysis
+  - Reverse engineering
+parameters:
+  - name: "file_path"
+    type: "string"
+    description: "Path of the file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "min_len"
+    type: "int"
+    description: "Minimum string length"
+    required: false
+    flag: "-n"
+    format: "flag"
+    default: 4
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional strings arguments. Used to pass strings options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

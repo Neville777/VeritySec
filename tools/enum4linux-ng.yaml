@@ -1,0 +1,85 @@
+name: "enum4linux-ng"
+command: "enum4linux-ng"
+enabled: true
+short_description: "Advanced SMB enumeration tool (next-generation Enum4linux)"
+description: |
+  Enum4linux-ng is the next-generation version of Enum4linux, offering more powerful SMB enumeration.
+
+  **Main features:**
+  - SMB share enumeration
+  - User and group enumeration
+  - Policy enumeration
+  - System information gathering
+
+  **Use cases:**
+  - Windows system penetration testing
+  - SMB security assessment
+  - Domain environment reconnaissance
+  - Security testing
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target IP address"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "username"
+    type: "string"
+    description: "Username"
+    required: false
+    flag: "-u"
+    format: "flag"
+  - name: "password"
+    type: "string"
+    description: "Password"
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "domain"
+    type: "string"
+    description: "Domain name"
+    required: false
+    flag: "-d"
+    format: "flag"
+  - name: "shares"
+    type: "bool"
+    description: "Enumerate shares"
+    required: false
+    flag: "-S"
+    format: "flag"
+    default: true
+  - name: "users"
+    type: "bool"
+    description: "Enumerate users"
+    required: false
+    flag: "-U"
+    format: "flag"
+    default: true
+  - name: "groups"
+    type: "bool"
+    description: "Enumerate groups"
+    required: false
+    flag: "-G"
+    format: "flag"
+    default: true
+  - name: "policy"
+    type: "bool"
+    description: "Enumerate policies"
+    required: false
+    flag: "-P"
+    format: "flag"
+    default: true
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional enum4linux-ng arguments. Used to pass enum4linux-ng options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

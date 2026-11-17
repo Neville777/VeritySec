@@ -1,0 +1,52 @@
+name: "foremost"
+command: "foremost"
+enabled: true
+short_description: "File recovery tool"
+description: |
+  Foremost is a file recovery tool based on file headers and footers.
+
+  **Main features:**
+  - File recovery
+  - Support for multiple file types
+  - Disk image analysis
+  - Data recovery
+
+  **Use cases:**
+  - Data recovery
+  - Forensic analysis
+  - File extraction
+  - Disk analysis
+parameters:
+  - name: "input_file"
+    type: "string"
+    description: "Input file or device"
+    required: true
+    flag: "-i"
+    format: "flag"
+  - name: "output_dir"
+    type: "string"
+    description: "Output directory"
+    required: false
+    flag: "-o"
+    format: "flag"
+    default: "/tmp/foremost_output"
+  - name: "file_types"
+    type: "string"
+    description: "File types to recover (jpg, gif, png, etc.)"
+    required: false
+    flag: "-t"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional foremost arguments. Used to pass foremost options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

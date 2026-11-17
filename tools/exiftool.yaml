@@ -1,0 +1,66 @@
+name: "exiftool"
+command: "exiftool"
+enabled: true
+short_description: "Metadata extraction tool"
+description: |
+  ExifTool is used to read, write, and edit metadata across many file formats.
+
+  **Main features:**
+  - Metadata extraction
+  - Support for many file formats
+  - Metadata editing
+  - Batch processing
+
+  **Use cases:**
+  - Forensic analysis
+  - Metadata inspection
+  - Privacy protection
+  - File analysis
+parameters:
+  - name: "file_path"
+    type: "string"
+    description: "Path to the file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "output_json"
+    type: "bool"
+    description: "Output in JSON format (equivalent to -json)"
+    required: false
+    flag: "-json"
+    format: "flag"
+    default: false
+  - name: "output_xml"
+    type: "bool"
+    description: "Output in XML format (equivalent to -X)"
+    required: false
+    flag: "-X"
+    format: "flag"
+    default: false
+  - name: "output_csv"
+    type: "bool"
+    description: "Output in CSV format (equivalent to -csv)"
+    required: false
+    flag: "-csv"
+    format: "flag"
+    default: false
+  - name: "tags"
+    type: "string"
+    description: "Specific tags to extract"
+    required: false
+    format: "template"
+    template: "-{value}"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional exiftool arguments. Used to pass exiftool options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

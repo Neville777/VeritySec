@@ -1,0 +1,49 @@
+name: "nuclei"
+command: "nuclei"
+enabled: true
+short_description: "Fast vulnerability scanner using YAML templates for vulnerability detection"
+description: |
+  Nuclei is a fast template-based vulnerability scanner that performs vulnerability detection using community-maintained YAML templates.
+
+  **Key features:**
+  - Fast vulnerability scanning
+  - Template-based detection
+  - Support for multiple protocols (HTTP, TCP, DNS, etc.)
+  - Real-time result output
+  - Custom template support
+
+  **Use cases:**
+  - Vulnerability scanning and discovery
+  - Security assessment
+  - Penetration testing
+  - Vulnerability verification
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target URL or IP"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "severity"
+    type: "string"
+    description: "Severity filter (critical,high,medium,low,info)"
+    required: false
+    flag: "-s"
+    format: "flag"
+  - name: "tags"
+    type: "string"
+    description: "Tag filter (e.g. cve,rce,lfi)"
+    required: false
+    flag: "-tags"
+    format: "flag"
+  - name: "template"
+    type: "string"
+    description: "Custom template path"
+    required: false
+    flag: "-t"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional Nuclei arguments"
+    required: false
+    format: "positional"

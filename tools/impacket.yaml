@@ -1,0 +1,102 @@
+name: "impacket"
+command: "python3"
+args:
+  - "-c"
+  - |
+    import json
+    import shlex
+    import subprocess
+    import sys
+
+    if len(sys.argv) < 2:
+        sys.stderr.write("Missing Impacket script path\n")
+        sys.exit(1)
+
+    script_path = sys.argv[1]
+    args_raw = sys.argv[2] if len(sys.argv) > 2 else ""
+    extra = sys.argv[3] if len(sys.argv) > 3 else ""
+
+    cmd = [script_path]
+
+    if args_raw:
+        parsed = []
+        try:
+            candidate = json.loads(args_raw)
+            if isinstance(candidate, list):
+                parsed = [str(item) for item in candidate]
+            elif isinstance(candidate, str):
+                parsed = shlex.split(candidate)
+        except (json.JSONDecodeError, ValueError):
+            parsed = shlex.split(args_raw)
+        cmd.extend(parsed)
+
+    if extra:
+        cmd.extend(shlex.split(extra))
+
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.stdout:
+        sys.stdout.write(proc.stdout)
+    if proc.stderr:
+        sys.stderr.write(proc.stderr)
+    sys.exit(proc.returncode)
+enabled: true
+short_description: "Impacket network protocol toolkit for network protocol attacks and lateral movement"
+description: |
+  Impacket is a Python toolkit for working with network protocols, commonly used in penetration testing and lateral movement.
+
+  **Main features:**
+  - SMB protocol attacks
+  - Kerberos protocol attacks
+  - RPC protocol attacks
+  - Remote command execution
+  - Credential dumping
+  - Ticket pass-the-ticket attacks
+
+  **Common tools:**
+  - psexec: remote command execution
+  - smbexec: SMB remote execution
+  - wmiexec: WMI remote execution
+  - secretsdump: credential dumping
+  - getTGT: Kerberos ticket acquisition
+
+  **Use cases:**
+  - Lateral movement
+  - Credential dumping
+  - Remote command execution
+  - Post-exploitation testing
+
+  **Notes:**
+  - Requires a Python environment
+  - Requires the appropriate credentials
+  - Use only for authorized security testing
+  - Tool paths are usually under /usr/share/doc/python3-impacket/examples/ or installed via pip
+parameters:
+  - name: "script"
+    type: "string"
+    description: "Path to the Impacket script, e.g. '/usr/share/doc/python3-impacket/examples/psexec.py'"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "args"
+    type: "string"
+    description: "Script arguments (JSON array or space-separated string)"
+    required: false
+    default: ""
+    position: 1
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional impacket arguments. Used to pass impacket options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    default: ""
+    position: 2
+    format: "positional"

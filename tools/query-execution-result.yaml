@@ -1,0 +1,159 @@
+name: "query_execution_result"
+# Note: this is an internal tool and does not execute external commands
+# The command field is set to a special value; the actual functionality must be implemented in code
+# Implementation location: internal/mcp/server.go or internal/handler/agent.go
+command: "internal:query_execution_result"
+enabled: false
+# Short description (used in the tool list to reduce token consumption)
+short_description: "Query tool execution results with pagination, search, and filtering for large result sets"
+# Detailed tool description
+description: |
+  Query tool execution results. Used to query saved tool execution results. When a tool returns a result that is too large, the system automatically saves the full result, and this tool is used to query those results on demand.
+
+  **Key features:**
+  - Paginated queries: browse large result sets page by page to avoid loading too much data at once
+  - Full-text search: search for specific keywords within the results
+  - Conditional filtering: filter results by condition (e.g. show only lines containing "error")
+  - Metadata queries: get basic information about the result (total lines, total pages, etc.)
+
+  **Use cases:**
+  - When a tool's result exceeds a threshold (e.g. 50KB), the system automatically saves the result
+  - When you need to view the full result, use this tool to query it on demand
+  - When you need to search for specific information, use the search feature
+  - When you need to filter for a specific type of content, use the filter feature
+
+  **Workflow:**
+  1. After tool execution completes, if the result is too large, the system saves the full result and returns an execution ID
+  2. Use this tool to query the result by execution_id
+  3. Browse by page, search for keywords, or apply filter conditions
+
+  **Notes:**
+  - execution_id is a required parameter, obtained from the return message of the tool execution
+  - Each page returns 100 lines by default; adjust with the limit parameter
+  - Search and filter can be used together
+  - Results are retained for a period of time (7 days by default) and may be cleaned up afterward
+
+# Parameter definitions
+parameters:
+  - name: "execution_id"
+    type: "string"
+    description: |
+      ID of the tool execution. Obtained from the return message after tool execution completes.
+
+      **Format requirements:**
+      - Execution ID string, usually in the format "exec_xxxxx" or a UUID
+      - Required parameter, cannot be empty
+
+      **Example values:**
+      - "exec_12345"
+      - "550e8400-e29b-41d4-a716-446655440000"
+
+      **How to obtain:**
+      - When a tool returns a large result, the system provides the execution_id in the message
+      - Format example: `Tool execution complete. Result saved (ID: exec_12345)`
+
+      **Notes:**
+      - Make sure the execution_id is correct, otherwise the query will fail
+      - execution_id is case-sensitive
+    required: true
+    format: "positional"
+    position: 0
+
+  - name: "page"
+    type: "integer"
+    description: |
+      Page number to query. Counting starts at 1.
+
+      **Format requirements:**
+      - Positive integer, starting from 1
+      - If not specified, defaults to 1 (first page)
+
+      **Example values:**
+      - 1 (first page, default)
+      - 2 (second page)
+      - 10 (tenth page)
+
+      **Notes:**
+      - Page number cannot be less than 1
+      - If the specified page number exceeds the total number of pages, an empty result is returned
+      - It is recommended to query the first page first to understand the result structure, then decide whether other pages are needed
+    required: false
+    default: 1
+
+  - name: "limit"
+    type: "integer"
+    description: |
+      Number of lines to return per page. Controls the amount of data returned in a single query.
+
+      **Format requirements:**
+      - Positive integer, recommended range: 10-500
+      - If not specified, defaults to 100 lines
+
+      **Example values:**
+      - 50 (50 lines per page)
+      - 100 (100 lines per page, default)
+      - 200 (200 lines per page)
+
+      **Notes:**
+      - A smaller limit reduces token consumption per query
+      - A larger limit reduces the number of queries, but increases the amount of data returned each time
+      - Adjust based on actual needs, balancing the number of queries and the amount of data
+    required: false
+    default: 100
+
+  - name: "search"
+    type: "string"
+    description: |
+      Search keyword. Searches for lines in the results that contain this keyword.
+
+      **Format requirements:**
+      - Any string
+      - Search is case-sensitive
+      - Partial matches are supported
+
+      **Example values:**
+      - "open" (search for lines containing "open", e.g. open ports)
+      - "error" (search for lines containing "error")
+      - "CVE-2023" (search for lines containing a CVE ID)
+      - "80/tcp" (search for a specific port)
+
+      **Use cases:**
+      - Quickly locate key information
+      - Find specific types of entries
+      - Filter for content of interest
+
+      **Notes:**
+      - Search runs across all lines and may return multiple pages of results
+      - Search results are also returned in pages
+      - You can use the page and limit parameters to control the returned results
+      - If both search and filter are specified, filter is applied first, then the search runs within those results
+    required: false
+
+  - name: "filter"
+    type: "string"
+    description: |
+      Filter condition. Returns only lines containing this keyword.
+
+      **Format requirements:**
+      - Any string
+      - Filtering is case-sensitive
+      - Partial matches are supported
+
+      **Example values:**
+      - "error" (return only lines containing "error")
+      - "warning" (return only lines containing "warning")
+      - "open" (return only lines containing "open")
+      - "200" (return only lines containing "200", e.g. HTTP status codes)
+
+      **Use cases:**
+      - View only error messages
+      - View only results with a specific status
+      - Filter out content you are not interested in
+
+      **Notes:**
+      - Filtering runs across all lines and may return multiple pages of results
+      - Filtered results are also returned in pages
+      - You can use the page and limit parameters to control the returned results
+      - If both search and filter are specified, filter is applied first, then the search runs within those results
+    required: false
+

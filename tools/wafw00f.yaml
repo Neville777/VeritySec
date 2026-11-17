@@ -1,0 +1,39 @@
+name: "wafw00f"
+command: "wafw00f"
+enabled: true
+short_description: "WAF identification and fingerprinting tool"
+description: |
+  Wafw00f is a web application firewall (WAF) identification and fingerprinting tool.
+
+  **Key features:**
+  - WAF detection
+  - WAF fingerprinting
+  - Support for many WAFs
+  - Bypass technique detection
+
+  **Use cases:**
+  - WAF identification
+  - Security testing
+  - Penetration testing
+  - Security assessment
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target URL or IP"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional wafw00f arguments. Used to pass wafw00f options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

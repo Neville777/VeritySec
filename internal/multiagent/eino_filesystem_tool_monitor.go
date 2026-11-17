@@ -1,0 +1,157 @@
+package multiagent
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"strings"
+
+	"veritysec/internal/agent"
+	"veritysec/internal/einomcp"
+
+	"github.com/cloudwego/eino/adk"
+	"github.com/cloudwego/eino/schema"
+)
+
+// einoADKFilesystemToolNames is consistent with the default ToolName* of cloudwego/eino/adk/middlewares/filesystem.
+// execute is already persisted by eino_execute_monitor, so it is not included here.
+var einoADKFilesystemToolNames = map[string]struct{}{
+	"ls":         {},
+	"read_file":  {},
+	"write_file": {},
+	"edit_file":  {},
+	"glob":       {},
+	"grep":       {},
+}
+
+func isBuiltinEinoADKFilesystemToolName(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	_, ok := einoADKFilesystemToolNames[n]
+	return ok
+}
+
+func toolCallArgsFromAccumulated(msgs []adk.Message, toolCallID, expectToolName string) map[string]interface{} {
+	tid := strings.TrimSpace(toolCallID)
+	expect := strings.TrimSpace(expectToolName)
+	for i := len(msgs) - 1; i >= 0; i-- {
+		m := msgs[i]
+		if m == nil || m.Role != schema.Assistant || len(m.ToolCalls) == 0 {
+			continue
+		}
+		for j := len(m.ToolCalls) - 1; j >= 0; j-- {
+			tc := m.ToolCalls[j]
+			if tid != "" && strings.TrimSpace(tc.ID) != tid {
+				continue
+			}
+			fn := strings.TrimSpace(tc.Function.Name)
+			if expect != "" && !strings.EqualFold(fn, expect) {
+				continue
+			}
+			raw := strings.TrimSpace(tc.Function.Arguments)
+			if raw == "" {
+				return map[string]interface{}{}
+			}
+			var args map[string]interface{}
+			if err := json.Unmarshal([]byte(raw), &args); err != nil {
+				return map[string]interface{}{"arguments_raw": raw}
+			}
+			if args == nil {
+				return map[string]interface{}{}
+			}
+			return args
+		}
+	}
+	return map[string]interface{}{}
+}
+
+func mustMarshalToolArguments(args map[string]interface{}) string {
+	if len(args) == 0 {
+		return "{}"
+	}
+	raw, err := json.Marshal(args)
+	if err != nil {
+		return "{}"
+	}
+	return string(raw)
+}
+
+// beginEinoADKFilesystemToolMonitor writes the running state when an Eino ADK filesystem tool call begins.
+func beginEinoADKFilesystemToolMonitor(
+	ctx context.Context,
+	ag *agent.Agent,
+	rec einomcp.ExecutionRecorder,
+	binder *MCPExecutionBinder,
+	toolCallID, toolName string,
+	args map[string]interface{},
+) {
+	if ag == nil || rec == nil {
+		return
+	}
+	name := strings.TrimSpace(toolName)
+	if name == "" || strings.EqualFold(name, "execute") {
+		return
+	}
+	if !isBuiltinEinoADKFilesystemToolName(name) {
+		return
+	}
+	tid := strings.TrimSpace(toolCallID)
+	if tid == "" {
+		return
+	}
+	storedName := "eino_fs::" + strings.ToLower(name)
+	id := ag.BeginLocalToolExecution(ctx, storedName, args)
+	if id == "" {
+		return
+	}
+	rec(id, tid)
+	if binder != nil {
+		binder.Bind(tid, id)
+	}
+}
+
+// recordEinoADKFilesystemToolMonitor writes the Eino ADK filesystem middleware tool result into MCP monitoring (consistent with execute / the MCP bridge).
+func recordEinoADKFilesystemToolMonitor(
+	ctx context.Context,
+	ag *agent.Agent,
+	rec einomcp.ExecutionRecorder,
+	binder *MCPExecutionBinder,
+	toolName string,
+	toolCallID string,
+	msgs []adk.Message,
+	resultText string,
+	isErr bool,
+) string {
+	if ag == nil || rec == nil {
+		return ""
+	}
+	name := strings.TrimSpace(toolName)
+	if name == "" || strings.EqualFold(name, "execute") {
+		return ""
+	}
+	if !isBuiltinEinoADKFilesystemToolName(name) {
+		return ""
+	}
+	args := toolCallArgsFromAccumulated(msgs, toolCallID, name)
+	if len(args) == 0 && binder != nil {
+		args = binder.Arguments(toolCallID)
+	}
+	storedName := "eino_fs::" + strings.ToLower(name)
+	var invErr error
+	if isErr {
+		t := strings.TrimSpace(resultText)
+		if t == "" {
+			invErr = errors.New("tool error")
+		} else {
+			invErr = errors.New(t)
+		}
+	}
+	execID := ""
+	if binder != nil {
+		execID = binder.ExecutionID(toolCallID)
+	}
+	id := ag.FinishLocalToolExecution(ctx, execID, storedName, args, resultText, invErr)
+	if id != "" && execID == "" {
+		rec(id, toolCallID)
+	}
+	return id
+}

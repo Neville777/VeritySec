@@ -1,0 +1,1361 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/*
+ * VeritySec Identity System — "Sentinel"
+ * Layered on top of base styles to give VeritySec its own distinct look.
+ * Palette: Electric emerald + deep midnight navy. Glass-morph panels. Geometric precision.
+ */
+
+/* ========================================================================
+   DESIGN TOKENS
+   ======================================================================== */
+:root {
+    /* Sentinel palette */
+    --vs-accent: #00e5a0;
+    --vs-accent-dim: #00c48a;
+    --vs-accent-glow: rgba(0, 229, 160, 0.25);
+    --vs-accent-subtle: rgba(0, 229, 160, 0.08);
+    --vs-accent-rgb: 0, 229, 160;
+    --vs-secondary: #7c5cfc;
+    --vs-secondary-dim: #6b4be0;
+    --vs-secondary-glow: rgba(124, 92, 252, 0.2);
+    --vs-secondary-rgb: 124, 92, 252;
+    --vs-danger: #ff4d6a;
+    --vs-danger-dim: #e6364f;
+    --vs-danger-rgb: 255, 77, 106;
+    --vs-warning: #ffb020;
+    --vs-warning-rgb: 255, 176, 32;
+    --vs-info: #38bdf8;
+    --vs-info-rgb: 56, 189, 248;
+
+    /* Radius scale */
+    --vs-radius-sm: 6px;
+    --vs-radius-md: 10px;
+    --vs-radius-lg: 14px;
+    --vs-radius-xl: 20px;
+    --vs-radius-pill: 999px;
+
+    /* Glass effect */
+    --vs-glass-bg: rgba(255, 255, 255, 0.72);
+    --vs-glass-border: rgba(0, 0, 0, 0.06);
+    --vs-glass-blur: 16px;
+
+    /* Transitions */
+    --vs-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --vs-transition-bounce: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ========================================================================
+   LIGHT THEME OVERRIDES
+   ======================================================================== */
+:root {
+    --accent-color: var(--vs-accent);
+    --accent-hover: var(--vs-accent-dim);
+    --brand-ai-start: var(--vs-accent);
+    --brand-ai-end: var(--vs-secondary);
+    --brand-gradient: linear-gradient(135deg, var(--vs-accent) 0%, var(--vs-secondary) 100%);
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f7fa;
+    --bg-tertiary: #edf1f7;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 0 1px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================================================
+   DARK THEME OVERRIDES
+   ======================================================================== */
+html[data-theme="dark"] {
+    --accent-color: var(--vs-accent);
+    --accent-hover: var(--vs-accent-dim);
+    --brand-core: #f1f5f9;
+    --brand-ai-start: var(--vs-accent);
+    --brand-ai-end: var(--vs-secondary);
+    --brand-gradient: linear-gradient(135deg, var(--vs-accent) 0%, var(--vs-secondary) 100%);
+    --bg-primary: #0c1021;
+    --bg-secondary: #060a16;
+    --bg-tertiary: #131a2e;
+    --card-bg: #0c1021;
+    --input-bg: #080d1c;
+    --text-primary: #e8ecf2;
+    --text-secondary: #8b95a8;
+    --text-muted: #4f5a6e;
+    --border-color: #1c2440;
+    --success-color: var(--vs-accent);
+    --warning-color: var(--vs-warning);
+    --error-color: var(--vs-danger);
+    --shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 20px 56px rgba(0, 0, 0, 0.6);
+    --close-btn-color: #e8ecf2;
+    --close-btn-bg-hover: #131a2e;
+    --close-btn-bg-active: #1c2440;
+    /* Glass in dark mode */
+    --vs-glass-bg: rgba(12, 16, 33, 0.78);
+    --vs-glass-border: rgba(255, 255, 255, 0.06);
+}
+
+/* ========================================================================
+   GLOBAL / BODY
+   ======================================================================== */
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+html[data-theme="dark"] body {
+    background:
+        radial-gradient(ellipse 60% 50% at 20% 10%, rgba(0, 229, 160, 0.06), transparent),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(124, 92, 252, 0.04), transparent),
+        var(--bg-secondary) !important;
+}
+
+/* ========================================================================
+   TOP HEADER BAR — glass morphism
+   ======================================================================== */
+header {
+    background: var(--vs-glass-bg) !important;
+    backdrop-filter: blur(var(--vs-glass-blur));
+    -webkit-backdrop-filter: blur(var(--vs-glass-blur));
+    border-bottom: 1px solid var(--vs-glass-border) !important;
+    box-shadow: 0 1px 0 var(--vs-glass-border), 0 4px 24px rgba(0, 0, 0, 0.03) !important;
+    position: relative;
+    z-index: 20;
+}
+
+html[data-theme="dark"] header {
+    background: var(--vs-glass-bg) !important;
+    box-shadow: 0 1px 0 var(--vs-glass-border), 0 4px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Accent stripe along top */
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--vs-accent), var(--vs-secondary), var(--vs-accent));
+    background-size: 200% 100%;
+    animation: vs-stripe-flow 8s ease infinite;
+}
+
+@keyframes vs-stripe-flow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Brand logo glow */
+.brand-logo {
+    border-radius: var(--vs-radius-md) !important;
+    box-shadow: 0 0 20px rgba(var(--vs-accent-rgb), 0.2), 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    transition: box-shadow var(--vs-transition), transform var(--vs-transition) !important;
+}
+
+.header-logo-link:hover .brand-logo {
+    box-shadow: 0 0 28px rgba(var(--vs-accent-rgb), 0.35), 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+    transform: scale(1.04);
+}
+
+/* Wordmark: "VeritySec" in slightly warmer white, "AI" with sentinel gradient */
+.brand-wordmark__core {
+    font-weight: 800 !important;
+    letter-spacing: -0.05em !important;
+}
+
+.brand-wordmark__ai {
+    background: var(--brand-gradient) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-weight: 900 !important;
+    margin-left: 1px;
+}
+
+/* Version badge */
+.version-badge {
+    background: linear-gradient(135deg, rgba(var(--vs-accent-rgb), 0.1) 0%, rgba(var(--vs-secondary-rgb), 0.1) 100%) !important;
+    border: 1px solid rgba(var(--vs-accent-rgb), 0.2) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* Header action buttons — ghost style */
+.header-actions button,
+.openapi-doc-btn,
+.lang-switcher-btn {
+    border-radius: var(--vs-radius-sm) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.header-actions button:hover,
+.openapi-doc-btn:hover,
+.lang-switcher-btn:hover {
+    background: var(--vs-accent-subtle) !important;
+    border-color: rgba(var(--vs-accent-rgb), 0.3) !important;
+    color: var(--vs-accent) !important;
+    transform: none !important;
+    box-shadow: 0 0 12px rgba(var(--vs-accent-rgb), 0.1);
+}
+
+html[data-theme="dark"] .header-actions button,
+html[data-theme="dark"] .openapi-doc-btn,
+html[data-theme="dark"] .lang-switcher-btn {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .header-actions button:hover,
+html[data-theme="dark"] .openapi-doc-btn:hover,
+html[data-theme="dark"] .lang-switcher-btn:hover {
+    background: rgba(var(--vs-accent-rgb), 0.08) !important;
+    border-color: rgba(var(--vs-accent-rgb), 0.3) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   SIDEBAR — dark glass with accent indicators
+   ======================================================================== */
+.main-sidebar {
+    background: linear-gradient(180deg, #f8fafb 0%, #f1f4f8 100%) !important;
+    border-right: 1px solid var(--border-color) !important;
+    box-shadow: 1px 0 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+html[data-theme="dark"] .main-sidebar {
+    background: linear-gradient(180deg, #0c1021 0%, #080d1c 100%) !important;
+    border-right: 1px solid #1c2440 !important;
+    box-shadow: 1px 0 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.main-sidebar-header {
+    border-bottom: 1px solid var(--border-color) !important;
+    background: transparent !important;
+}
+
+/* Nav items — pill-shaped hover, accent bar on active */
+.nav-item-content {
+    border-left: 3px solid transparent !important;
+    border-radius: 0 !important;
+    margin: 0 8px 0 0 !important;
+    transition: all var(--vs-transition) !important;
+    font-weight: 400 !important;
+    font-size: 0.875rem !important;
+}
+
+.nav-item-content:hover {
+    background: var(--vs-accent-subtle) !important;
+    color: var(--vs-accent) !important;
+}
+
+.nav-item.active > .nav-item-content {
+    background: rgba(var(--vs-accent-rgb), 0.08) !important;
+    color: var(--vs-accent) !important;
+    border-left-color: var(--vs-accent) !important;
+    font-weight: 600 !important;
+}
+
+.nav-item.active > .nav-item-content svg {
+    stroke: var(--vs-accent) !important;
+}
+
+.nav-submenu-item:hover {
+    background: var(--vs-accent-subtle) !important;
+    color: var(--vs-accent) !important;
+}
+
+.nav-submenu-item.active {
+    background: rgba(var(--vs-accent-rgb), 0.1) !important;
+    color: var(--vs-accent) !important;
+    border-left-color: var(--vs-accent) !important;
+}
+
+/* Section labels */
+.nav-section-label {
+    text-transform: uppercase !important;
+    font-size: 0.625rem !important;
+    letter-spacing: 0.12em !important;
+    color: var(--text-muted) !important;
+}
+
+/* Submenu popup */
+.submenu-popup {
+    border-radius: var(--vs-radius-md) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-lg) !important;
+    backdrop-filter: blur(12px);
+}
+
+.submenu-popup-item:hover,
+.submenu-popup-item.active {
+    background: rgba(var(--vs-accent-rgb), 0.08) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* Sidebar collapse button */
+.sidebar-collapse-btn {
+    border-radius: var(--vs-radius-sm) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.sidebar-collapse-btn:hover {
+    border-color: var(--vs-accent) !important;
+    color: var(--vs-accent) !important;
+    box-shadow: 0 0 10px rgba(var(--vs-accent-rgb), 0.1);
+}
+
+/* ========================================================================
+   CONTENT AREA
+   ======================================================================== */
+.content-area {
+    background: var(--bg-secondary) !important;
+}
+
+html[data-theme="dark"] .content-area {
+    background: var(--bg-secondary) !important;
+}
+
+/* Page headers — clean, no gradient */
+.page-header {
+    background: var(--vs-glass-bg) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border-color) !important;
+    box-shadow: none !important;
+}
+
+html[data-theme="dark"] .page-header {
+    background: var(--vs-glass-bg) !important;
+}
+
+.page-header h2 {
+    font-weight: 700 !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* ========================================================================
+   BUTTONS — refined with accent gradients
+   ======================================================================== */
+.btn-primary {
+    background: var(--vs-accent) !important;
+    color: #0a0e1a !important;
+    border: none !important;
+    border-radius: var(--vs-radius-sm) !important;
+    font-weight: 600 !important;
+    transition: all var(--vs-transition) !important;
+    box-shadow: 0 1px 3px rgba(var(--vs-accent-rgb), 0.3);
+}
+
+.btn-primary:hover {
+    background: var(--vs-accent-dim) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px rgba(var(--vs-accent-rgb), 0.3) !important;
+}
+
+.btn-primary:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 4px rgba(var(--vs-accent-rgb), 0.2) !important;
+}
+
+.btn-secondary {
+    border-radius: var(--vs-radius-sm) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.btn-secondary:hover {
+    border-color: rgba(var(--vs-accent-rgb), 0.3) !important;
+    background: var(--vs-accent-subtle) !important;
+    color: var(--vs-accent) !important;
+}
+
+.btn-danger {
+    background: rgba(var(--vs-danger-rgb), 0.08) !important;
+    color: var(--vs-danger) !important;
+    border: 1px solid rgba(var(--vs-danger-rgb), 0.2) !important;
+    border-radius: var(--vs-radius-sm) !important;
+}
+
+.btn-danger:hover {
+    background: rgba(var(--vs-danger-rgb), 0.15) !important;
+    border-color: rgba(var(--vs-danger-rgb), 0.4) !important;
+    box-shadow: 0 0 12px rgba(var(--vs-danger-rgb), 0.1);
+}
+
+/* ========================================================================
+   FORM INPUTS — refined with glow focus
+   ======================================================================== */
+.form-group input:not([type="checkbox"]):not([type="radio"]),
+.form-group select,
+.form-group textarea,
+.form-input {
+    border-radius: var(--vs-radius-sm) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.form-group input:not([type="checkbox"]):not([type="radio"]):focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.form-input:focus {
+    border-color: var(--vs-accent) !important;
+    box-shadow: 0 0 0 3px rgba(var(--vs-accent-rgb), 0.12) !important;
+    outline: none !important;
+}
+
+/* ========================================================================
+   CARDS & PANELS — glass morphism
+   ======================================================================== */
+.vulnerability-alert-settings,
+.hitl-sidebar-card,
+.conversation-reasoning-card,
+.monitor-section-card,
+.mcp-monitor-card {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden;
+    transition: border-color var(--vs-transition), box-shadow var(--vs-transition) !important;
+}
+
+html[data-theme="dark"] .vulnerability-alert-settings,
+html[data-theme="dark"] .hitl-sidebar-card,
+html[data-theme="dark"] .conversation-reasoning-card,
+html[data-theme="dark"] .monitor-section-card {
+    background: rgba(12, 16, 33, 0.6) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Card hover glow */
+.vulnerability-alert-settings:hover {
+    border-color: rgba(var(--vs-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 24px rgba(var(--vs-accent-rgb), 0.05) !important;
+}
+
+/* ========================================================================
+   MODALS — glass backdrop with accent border
+   ======================================================================== */
+.modal {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.modal-content,
+.settings-modal-content,
+.monitor-modal-content,
+.projects-modal-dialog {
+    border-radius: var(--vs-radius-xl) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-lg), 0 0 60px rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden;
+}
+
+html[data-theme="dark"] .modal-content,
+html[data-theme="dark"] .settings-modal-content,
+html[data-theme="dark"] .monitor-modal-content,
+html[data-theme="dark"] .projects-modal-dialog {
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 1px rgba(var(--vs-accent-rgb), 0.1) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* ========================================================================
+   NOTIFICATION / BADGES — accent pill style
+   ======================================================================== */
+.notification-badge {
+    background: var(--vs-accent) !important;
+    color: #0a0e1a !important;
+    font-weight: 700 !important;
+    border-radius: var(--vs-radius-pill) !important;
+}
+
+/* ========================================================================
+   CONVERSATION SIDEBAR (chat page)
+   ======================================================================== */
+.conversation-sidebar {
+    background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%) !important;
+}
+
+html[data-theme="dark"] .conversation-sidebar {
+    background: linear-gradient(180deg, #0c1021 0%, #080d1c 100%) !important;
+}
+
+/* ========================================================================
+   SCROLL BARS — themed
+   ======================================================================== */
+html[data-theme="dark"] *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+html[data-theme="dark"] *::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html[data-theme="dark"] *::-webkit-scrollbar-thumb {
+    background: rgba(var(--vs-accent-rgb), 0.15);
+    border-radius: 3px;
+}
+
+html[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--vs-accent-rgb), 0.3);
+}
+
+/* ========================================================================
+   DASHBOARD — unique widgets with frosted panels
+   ======================================================================== */
+html[data-theme="dark"] .content-area:has(.dashboard-page.active) {
+    background:
+        radial-gradient(ellipse 50% 40% at 10% 20%, rgba(var(--vs-accent-rgb), 0.04), transparent),
+        radial-gradient(ellipse 40% 30% at 90% 70%, rgba(var(--vs-secondary-rgb), 0.03), transparent),
+        var(--bg-secondary) !important;
+}
+
+/* Dashboard overview stat cards */
+.overview-stat-card,
+.dashboard-stat-card {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all var(--vs-transition) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.overview-stat-card:hover,
+.dashboard-stat-card:hover {
+    border-color: rgba(var(--vs-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 24px rgba(var(--vs-accent-rgb), 0.06) !important;
+    transform: translateY(-2px);
+}
+
+html[data-theme="dark"] .overview-stat-card,
+html[data-theme="dark"] .dashboard-stat-card {
+    background: rgba(12, 16, 33, 0.6) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Heatmap tokens */
+html[data-theme="dark"] :root {
+    --heatmap-0: #0c1021;
+    --heatmap-1: rgba(var(--vs-accent-rgb), 0.2);
+    --heatmap-2: rgba(var(--vs-accent-rgb), 0.4);
+    --heatmap-3: rgba(var(--vs-accent-rgb), 0.6);
+    --heatmap-4: var(--vs-accent);
+}
+
+/* Force heatmap tokens in dark mode */
+html[data-theme="dark"] .dashboard-heatmap-cell[data-level="0"] { background: #0c1021 !important; }
+html[data-theme="dark"] .dashboard-heatmap-cell[data-level="1"] { background: rgba(0, 229, 160, 0.2) !important; }
+html[data-theme="dark"] .dashboard-heatmap-cell[data-level="2"] { background: rgba(0, 229, 160, 0.4) !important; }
+html[data-theme="dark"] .dashboard-heatmap-cell[data-level="3"] { background: rgba(0, 229, 160, 0.65) !important; }
+html[data-theme="dark"] .dashboard-heatmap-cell[data-level="4"] { background: #00e5a0 !important; }
+
+.dashboard-heatmap-cell[data-level="1"] { background: rgba(0, 229, 160, 0.15) !important; }
+.dashboard-heatmap-cell[data-level="2"] { background: rgba(0, 229, 160, 0.3) !important; }
+.dashboard-heatmap-cell[data-level="3"] { background: rgba(0, 229, 160, 0.5) !important; }
+.dashboard-heatmap-cell[data-level="4"] { background: #00c48a !important; }
+
+/* Dashboard widget containers */
+.dashboard-heatmap-container,
+.dashboard-counter-container,
+.dashboard-recent-tests-container,
+.dashboard-cve-feed-container {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden;
+}
+
+html[data-theme="dark"] .dashboard-heatmap-container,
+html[data-theme="dark"] .dashboard-counter-container,
+html[data-theme="dark"] .dashboard-recent-tests-container,
+html[data-theme="dark"] .dashboard-cve-feed-container {
+    background: rgba(12, 16, 33, 0.5) !important;
+    backdrop-filter: blur(10px);
+}
+
+/* Dashboard CVE widget items clickable glow */
+.dashboard-cve-item {
+    transition: all var(--vs-transition) !important;
+    border-radius: var(--vs-radius-sm) !important;
+}
+
+.dashboard-cve-item:hover {
+    background: rgba(var(--vs-accent-rgb), 0.05) !important;
+}
+
+/* Detection counter stat values */
+.dashboard-counter-stat-val {
+    color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   CVE FEED PAGE — emerald category pills
+   ======================================================================== */
+.cve-feed-item {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.cve-feed-item:hover {
+    border-color: rgba(var(--vs-accent-rgb), 0.3) !important;
+    box-shadow: 0 0 20px rgba(var(--vs-accent-rgb), 0.08) !important;
+    transform: translateY(-1px);
+}
+
+.cve-feed-item-id {
+    color: var(--vs-accent) !important;
+}
+
+/* Category filter buttons */
+.cve-cat-filter-btn {
+    border-radius: var(--vs-radius-pill) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.cve-cat-filter-btn.active {
+    box-shadow: 0 2px 10px rgba(var(--vs-accent-rgb), 0.2);
+}
+
+/* ========================================================================
+   CVE DETAIL PAGE — frosted panels
+   ======================================================================== */
+.cve-score-card {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+html[data-theme="dark"] .cve-score-card {
+    background: rgba(12, 16, 33, 0.5) !important;
+    backdrop-filter: blur(12px);
+}
+
+.cve-score-card:hover {
+    border-color: rgba(var(--vs-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 16px rgba(var(--vs-accent-rgb), 0.05) !important;
+}
+
+.cve-detail-section {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+html[data-theme="dark"] .cve-detail-section {
+    background: rgba(12, 16, 33, 0.5) !important;
+    backdrop-filter: blur(12px);
+}
+
+/* AI panel */
+.cve-detail-ai-panel {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden;
+}
+
+html[data-theme="dark"] .cve-detail-ai-panel {
+    background: rgba(12, 16, 33, 0.5) !important;
+    backdrop-filter: blur(12px);
+}
+
+.cve-detail-ai-header {
+    background: rgba(var(--vs-secondary-rgb), 0.06) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Triage panel */
+.cve-detail-triage-panel {
+    border-radius: var(--vs-radius-lg) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+html[data-theme="dark"] .cve-detail-triage-panel {
+    background: rgba(12, 16, 33, 0.5) !important;
+    backdrop-filter: blur(12px);
+}
+
+/* Triage bars use sentinel colors */
+.cve-triage-bar {
+    border-radius: 4px !important;
+}
+
+html[data-theme="dark"] .cve-triage-bar {
+    background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.cve-triage-fill {
+    border-radius: 4px !important;
+}
+
+/* CWE tags */
+.cve-cwe-tag {
+    background: rgba(var(--vs-secondary-rgb), 0.1) !important;
+    color: var(--vs-secondary) !important;
+    border-radius: var(--vs-radius-sm) !important;
+}
+
+/* CPE rows */
+.cve-cpe-product {
+    color: var(--vs-accent) !important;
+}
+
+/* Reference links */
+.cve-ref-link {
+    color: var(--vs-accent) !important;
+    border-radius: var(--vs-radius-sm) !important;
+}
+
+.cve-ref-link:hover {
+    background: rgba(var(--vs-accent-rgb), 0.08) !important;
+}
+
+/* ========================================================================
+   VULNERABILITY ALERT ICON
+   ======================================================================== */
+.vulnerability-alert-icon {
+    background: rgba(var(--vs-accent-rgb), 0.08) !important;
+    color: var(--vs-accent) !important;
+    border-radius: var(--vs-radius-md) !important;
+}
+
+/* ========================================================================
+   CHAT — refined message bubbles
+   ======================================================================== */
+html[data-theme="dark"] .message.user .message-bubble {
+    background: rgba(var(--vs-accent-rgb), 0.08) !important;
+    border: 1px solid rgba(var(--vs-accent-rgb), 0.12) !important;
+}
+
+/* ========================================================================
+   LOADING SPINNER — accent color
+   ======================================================================== */
+.loading-spinner,
+.btn-loading::before {
+    border-top-color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   SELECTION / FOCUS — emerald accent
+   ======================================================================== */
+::selection {
+    background: rgba(var(--vs-accent-rgb), 0.2);
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid var(--vs-accent);
+    outline-offset: 2px;
+}
+
+/* ========================================================================
+   LINKS
+   ======================================================================== */
+a {
+    color: var(--vs-accent);
+}
+
+a:hover {
+    color: var(--vs-accent-dim);
+}
+
+/* ========================================================================
+   TOOL/HITL BADGES
+   ======================================================================== */
+.hitl-tool-badge {
+    border-radius: var(--vs-radius-sm) !important;
+}
+
+/* ========================================================================
+   USER MENU
+   ======================================================================== */
+.user-menu-dropdown {
+    border-radius: var(--vs-radius-md) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-lg) !important;
+    overflow: hidden;
+}
+
+.user-menu-item:hover {
+    background: var(--vs-accent-subtle) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   NOTIFICATION DROPDOWN
+   ======================================================================== */
+.notification-dropdown {
+    border-radius: var(--vs-radius-md) !important;
+}
+
+/* ========================================================================
+   PAGINATION
+   ======================================================================== */
+.pagination-fixed .pagination-controls .btn-secondary:hover:not(:disabled) {
+    border-color: rgba(var(--vs-accent-rgb), 0.3) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   CONVERSATION ITEMS — hover glow
+   ======================================================================== */
+.conversation-item:hover {
+    border-color: rgba(var(--vs-accent-rgb), 0.15) !important;
+}
+
+.conversation-item.active,
+.conversation-item.selected {
+    border-color: rgba(var(--vs-accent-rgb), 0.3) !important;
+    background: rgba(var(--vs-accent-rgb), 0.05) !important;
+}
+
+/* ========================================================================
+   SEARCH INPUT
+   ======================================================================== */
+.form-input,
+#cve-feed-search,
+#cve-search-input {
+    border-radius: var(--vs-radius-sm) !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.form-input:focus,
+#cve-feed-search:focus,
+#cve-search-input:focus {
+    border-color: var(--vs-accent) !important;
+    box-shadow: 0 0 0 3px rgba(var(--vs-accent-rgb), 0.1) !important;
+}
+
+/* ========================================================================
+   DARK THEME: settings / tools / HITL panels
+   ======================================================================== */
+html[data-theme="dark"] .nav-submenu {
+    background: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ========================================================================
+   VULNERABILITY TABLE SEVERITY BADGES — unified sentinel colors
+   ======================================================================== */
+.severity-badge[data-severity="critical"],
+.vuln-severity.critical {
+    background: rgba(var(--vs-danger-rgb), 0.12) !important;
+    color: var(--vs-danger) !important;
+}
+
+.severity-badge[data-severity="high"],
+.vuln-severity.high {
+    background: rgba(var(--vs-warning-rgb), 0.12) !important;
+    color: var(--vs-warning) !important;
+}
+
+.severity-badge[data-severity="medium"],
+.vuln-severity.medium {
+    background: rgba(var(--vs-info-rgb), 0.12) !important;
+    color: var(--vs-info) !important;
+}
+
+.severity-badge[data-severity="low"],
+.vuln-severity.low {
+    background: rgba(var(--vs-accent-rgb), 0.1) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   UNIQUE: Dot-grid background for dashboard content
+   ======================================================================== */
+html[data-theme="dark"] .page-content {
+    background-image:
+        radial-gradient(circle, rgba(var(--vs-accent-rgb), 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 12px 12px;
+}
+
+/* ========================================================================
+   UNIQUE: Pulse animation for live indicators
+   ======================================================================== */
+@keyframes vs-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes vs-glow-pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(var(--vs-accent-rgb), 0.3); }
+    50% { box-shadow: 0 0 12px rgba(var(--vs-accent-rgb), 0.5); }
+}
+
+.cve-kev-badge {
+    animation: vs-pulse 2s ease-in-out infinite;
+}
+
+/* ========================================================================
+   UNIQUE: Accent line on active page-header
+   ======================================================================== */
+.page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 80px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--vs-accent), transparent);
+    border-radius: 1px;
+}
+
+/* ========================================================================
+   DARK MODE: conversation sidebar and chat
+   ======================================================================== */
+html[data-theme="dark"] .conversation-sidebar {
+    background: linear-gradient(180deg, #0c1021 0%, #080d1c 100%) !important;
+    border-right: 1px solid #1c2440 !important;
+}
+
+html[data-theme="dark"] .chat-input-container {
+    background: var(--bg-primary) !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+/* ========================================================================
+   SWITCHES / TOGGLES — accent colored
+   ======================================================================== */
+.vulnerability-alert-switch input:checked + .vulnerability-alert-switch-track {
+    background: var(--vs-accent) !important;
+}
+
+/* Theme checkbox — accent */
+input.theme-checkbox:checked {
+    background-color: var(--vs-accent) !important;
+    border-color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   NEW CHAT BUTTON — gradient
+   ======================================================================== */
+.new-chat-btn {
+    background: linear-gradient(135deg, var(--vs-accent) 0%, var(--vs-accent-dim) 100%) !important;
+    color: #0a0e1a !important;
+    border: none !important;
+    border-radius: var(--vs-radius-md) !important;
+    font-weight: 600 !important;
+    transition: all var(--vs-transition) !important;
+}
+
+.new-chat-btn:hover {
+    box-shadow: 0 4px 16px rgba(var(--vs-accent-rgb), 0.3) !important;
+    transform: translateY(-1px);
+}
+
+/* ========================================================================
+   ENGAGEMENT / PROJECT STATUS BADGES
+   ======================================================================== */
+.status-badge.active,
+.status-badge.running,
+.dashboard-recent-test-status[data-status="active"],
+.dashboard-recent-test-status[data-status="running"] {
+    background: rgba(var(--vs-accent-rgb), 0.1) !important;
+    color: var(--vs-accent) !important;
+}
+
+/* ========================================================================
+   TOOL EXECUTION RESULTS
+   ======================================================================== */
+.hitl-tool-result-container {
+    border-radius: var(--vs-radius-md) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* ========================================================================
+   DARK MODE: MCP monitor
+   ======================================================================== */
+html[data-theme="dark"] .content-area:has(#page-mcp-monitor.active) {
+    background: var(--bg-secondary) !important;
+}
+
+/* ========================================================================
+   SKELETON / LOADING STATES
+   ======================================================================== */
+@keyframes vs-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton,
+.loading-placeholder {
+    background: linear-gradient(90deg,
+        var(--bg-tertiary) 25%,
+        rgba(var(--vs-accent-rgb), 0.05) 50%,
+        var(--bg-tertiary) 75%) !important;
+    background-size: 200% 100% !important;
+    animation: vs-shimmer 1.5s ease infinite !important;
+    border-radius: var(--vs-radius-sm) !important;
+}
+
+/* ========================================================================
+   HEADER TOKEN USAGE INDICATOR
+   ======================================================================== */
+.header-token-usage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: rgba(0, 229, 160, 0.08);
+    border: 1px solid rgba(0, 229, 160, 0.2);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--vs-accent, #00e5a0);
+    cursor: default;
+    white-space: nowrap;
+}
+.header-token-usage svg {
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+.header-token-usage .header-token-sep {
+    opacity: 0.4;
+}
+#header-token-cost {
+    color: var(--text-secondary, #94a3b8);
+    font-weight: 400;
+}
+
+/* ========================================================================
+   FILE VIEWER MODAL
+   ======================================================================== */
+.file-viewer-modal-content {
+    max-width: 90vw;
+    width: 960px;
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.file-viewer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    flex-shrink: 0;
+}
+.file-viewer-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+.file-viewer-title-row h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.file-viewer-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+}
+.file-viewer-meta {
+    font-size: 12px;
+    color: var(--text-secondary, #94a3b8);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.file-viewer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.file-viewer-actions .btn-sm {
+    font-size: 12px;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.file-viewer-body {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    position: relative;
+}
+.file-viewer-body pre {
+    margin: 0;
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--bg-secondary, #0d1117);
+    color: var(--text-primary, #e6edf3);
+    min-height: 100%;
+}
+.file-viewer-body pre .line-num {
+    display: inline-block;
+    min-width: 3em;
+    padding-right: 1em;
+    text-align: right;
+    color: var(--text-secondary, #484f58);
+    user-select: none;
+    opacity: 0.5;
+}
+.file-viewer-body .fv-image-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-height: 100%;
+    background: var(--bg-secondary, #0d1117);
+}
+.file-viewer-body .fv-image-wrap img {
+    max-width: 100%;
+    max-height: 70vh;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+.file-viewer-body .fv-json-wrap {
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    background: var(--bg-secondary, #0d1117);
+    min-height: 100%;
+}
+.file-viewer-body .fv-json-key { color: #7ee787; }
+.file-viewer-body .fv-json-str { color: #a5d6ff; }
+.file-viewer-body .fv-json-num { color: #d2a8ff; }
+.file-viewer-body .fv-json-bool { color: #ff7b72; }
+.file-viewer-body .fv-json-null { color: #8b949e; font-style: italic; }
+.file-viewer-body .fv-json-bracket { color: #8b949e; }
+.file-viewer-body .fv-json-toggle {
+    cursor: pointer;
+    user-select: none;
+    display: inline-block;
+    width: 1em;
+    text-align: center;
+    color: var(--text-secondary, #8b949e);
+}
+.file-viewer-body .fv-json-toggle:hover { color: var(--vs-accent, #00e5a0); }
+.file-viewer-body .fv-json-collapsed { display: none; }
+.file-viewer-body .fv-markdown {
+    padding: 24px 32px;
+    max-width: 800px;
+    line-height: 1.7;
+    font-size: 14px;
+}
+.file-viewer-body .fv-markdown h1,
+.file-viewer-body .fv-markdown h2,
+.file-viewer-body .fv-markdown h3 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    padding-bottom: 0.3em;
+}
+.file-viewer-body .fv-markdown code {
+    background: rgba(0,0,0,0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+.file-viewer-body .fv-markdown pre code {
+    display: block;
+    padding: 12px 16px;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+.file-viewer-body .fv-binary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 48px;
+    min-height: 100%;
+    color: var(--text-secondary, #94a3b8);
+}
+.file-viewer-body .fv-binary svg { opacity: 0.4; }
+
+/* ========================================================================
+   FILE VIEWER — CSV TABLE
+   ======================================================================== */
+.fv-csv-wrap {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+.fv-csv-summary {
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+    font-size: 13px;
+}
+.fv-csv-stat {
+    color: var(--text-secondary, #94a3b8);
+}
+.fv-csv-stat-pill {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 11px;
+}
+.fv-csv-table-scroll {
+    overflow: auto;
+    flex: 1;
+}
+.fv-csv-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+}
+.fv-csv-table th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary, #161b22);
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary, #8b949e);
+    border-bottom: 2px solid var(--border-color, rgba(255,255,255,0.1));
+    white-space: nowrap;
+}
+.fv-csv-table td {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.04));
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fv-csv-table tbody tr:hover td {
+    background: rgba(0, 229, 160, 0.04);
+}
+.fv-csv-rownum {
+    color: var(--text-secondary, #484f58);
+    font-size: 11px;
+    text-align: right;
+    min-width: 2.5em;
+    opacity: 0.5;
+    user-select: none;
+}
+.fv-csv-sev-critical { color: #ff4757; font-weight: 600; }
+.fv-csv-sev-high { color: #ff6b81; font-weight: 600; }
+.fv-csv-sev-medium { color: #ffa502; }
+.fv-csv-sev-low { color: #2ed573; }
+.fv-csv-sev-info { color: #70a1ff; }
+.fv-csv-status-open { color: #ff4757; }
+.fv-csv-status-closed { color: #2ed573; }
+.fv-csv-truncated {
+    padding: 12px 20px;
+    text-align: center;
+    color: var(--text-secondary, #8b949e);
+    font-size: 12px;
+    border-top: 1px solid var(--border-color, rgba(255,255,255,0.08));
+}
+
+/* ========================================================================
+   FILE VIEWER — JSONL
+   ======================================================================== */
+.fv-jsonl-wrap {
+    padding: 0;
+    min-height: 100%;
+    background: var(--bg-secondary, #0d1117);
+}
+.fv-jsonl-header {
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--text-secondary, #8b949e);
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.08));
+}
+.fv-jsonl-entry {
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.04));
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+.fv-jsonl-entry pre {
+    margin: 0;
+    padding: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: none;
+    min-height: auto;
+}
+.fv-jsonl-idx {
+    color: var(--text-secondary, #484f58);
+    min-width: 2.5em;
+    text-align: right;
+    opacity: 0.5;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+/* ========================================================================
+   FILE VIEWER — HTML PREVIEW
+   ======================================================================== */
+.fv-html-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+}
+
+/* ========================================================================
+   CHAT FILES QUICK-ACCESS BUTTON & BADGE
+   ======================================================================== */
+.chat-files-quick-btn {
+    position: relative;
+}
+.chat-files-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--vs-accent, #00e5a0);
+    color: #0c1021;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    pointer-events: none;
+}
+.chat-files-badge.pulse {
+    animation: fvBadgePulse 0.6s ease-out;
+}
+@keyframes fvBadgePulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 229, 160, 0.5); }
+    50% { transform: scale(1.3); box-shadow: 0 0 0 6px rgba(0, 229, 160, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 229, 160, 0); }
+}
+
+/* Inter is loaded via @import at the top of this file */

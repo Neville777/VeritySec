@@ -1,0 +1,52 @@
+name: "feroxbuster"
+command: "feroxbuster"
+enabled: false
+short_description: "Recursive content discovery tool"
+description: |
+  Feroxbuster is a fast, simple recursive content discovery tool.
+
+  **Main features:**
+  - Recursive directory discovery
+  - Multi-threading support
+  - Automatic filtering
+  - Multiple output formats
+
+  **Use cases:**
+  - Web content discovery
+  - Directory enumeration
+  - File discovery
+  - Security testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "wordlist"
+    type: "string"
+    description: "Wordlist file path"
+    required: false
+    flag: "-w"
+    format: "flag"
+  - name: "threads"
+    type: "int"
+    description: "Number of threads"
+    required: false
+    flag: "-t"
+    format: "flag"
+    default: 10
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional feroxbuster arguments. Used to pass feroxbuster options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

@@ -1,0 +1,369 @@
+name: "zoomeye_search"
+command: "python3"
+args:
+  - "-c"
+  - |
+    import sys
+    import json
+    import base64
+    import requests
+    import os
+
+    # ==================== ZoomEye configuration ====================
+    # Enter your ZoomEye account information here
+    # You can also set it via the environment variable: ZOOMEYE_API_KEY
+    # enable defaults to false; it must be enabled before this MCP can be called
+    ZOOMEYE_API_KEY = ""  # Enter your ZoomEye API key here
+    # ==================================================
+
+    # ZoomEye API base URL
+    base_url = "https://api.zoomeye.ai/v2/search"
+
+    # Parse arguments (from a JSON string or command-line arguments)
+    def parse_args():
+        # Try to read the JSON config from the first argument
+        if len(sys.argv) > 1:
+            try:
+                # Make sure sys.argv[1] is a string
+                arg1 = str(sys.argv[1])
+                # Try to parse as JSON
+                config = json.loads(arg1)
+                # Make sure the result is a dict
+                if isinstance(config, dict):
+                    return config
+            except (json.JSONDecodeError, TypeError, ValueError):
+                # Not JSON; fall back to the legacy positional argument mode
+                pass
+
+        # Legacy positional argument mode (backward compatibility)
+        # Argument positions: query=1, page=2, pagesize=3, fields=4, sub_type=5
+        config = {}
+        if len(sys.argv) > 1:
+            config['query'] = str(sys.argv[1])
+        if len(sys.argv) > 2:
+            try:
+                config['page'] = int(sys.argv[2])
+            except (ValueError, TypeError):
+                pass
+        if len(sys.argv) > 3:
+            try:
+                config['pagesize'] = int(sys.argv[3])
+            except (ValueError, TypeError):
+                pass
+        if len(sys.argv) > 4:
+            config['fields'] = str(sys.argv[4])
+        if len(sys.argv) > 5:
+            config['sub_type'] = str(sys.argv[5])
+        return config
+
+    try:
+        config = parse_args()
+
+        # Make sure config is a dict
+        if not isinstance(config, dict):
+            error_result = {
+                "status": "error",
+                "message": f"Argument parsing error: expected a dict, but got {type(config).__name__}",
+                "type": "TypeError"
+            }
+            print(json.dumps(error_result, ensure_ascii=False, indent=2))
+            sys.exit(1)
+
+        # Get api_key from config or environment variable
+        api_key = os.getenv('ZOOMEYE_API_KEY', ZOOMEYE_API_KEY).strip()
+        query = config.get('query', '').strip()
+
+        if not api_key:
+            error_result = {
+                "status": "error",
+                "message": "Missing ZoomEye configuration: api_key (ZoomEye API key)",
+                "required_config": ["api_key"],
+                "note": "Please enter your API key in the ZOOMEYE_API_KEY setting of the YAML file, or set it in the ZOOMEYE_API_KEY environment variable. The API key can be obtained from the ZoomEye personal center: https://www.zoomeye.ai/user"
+            }
+            print(json.dumps(error_result, ensure_ascii=False, indent=2))
+            sys.exit(1)
+
+        if not query:
+            error_result = {
+                "status": "error",
+                "message": "Missing required parameter: query (search query statement)",
+                "required_params": ["query"],
+                "examples": [
+                    'app:"Apache"',
+                    'title:"login"',
+                    'domain:"example.com"',
+                    'ip:"1.1.1.1"',
+                    'port:80',
+                    'country:"CN"',
+                    'city:"Beijing"'
+                ]
+            }
+            print(json.dumps(error_result, ensure_ascii=False, indent=2))
+            sys.exit(1)
+
+        # Build request parameters (ZoomEye API uses POST; parameters are in the request body)
+        # ZoomEye API uses the qbase64 parameter (base64-encoded query)
+        data = {
+            'qbase64': base64.b64encode(query.encode('utf-8')).decode('utf-8')
+        }
+
+        # Optional parameters
+        if 'page' in config and config['page'] is not None:
+            try:
+                page = int(config['page'])
+                if page > 0:
+                    data['page'] = page
+            except (ValueError, TypeError):
+                pass
+
+        if 'pagesize' in config and config['pagesize'] is not None:
+            try:
+                pagesize = int(config['pagesize'])
+                if pagesize > 0 and pagesize <= 10000:
+                    data['pagesize'] = pagesize
+            except (ValueError, TypeError):
+                pass
+
+        if 'fields' in config and config['fields']:
+            data['fields'] = str(config['fields']).strip()
+
+        if 'sub_type' in config and config['sub_type']:
+            sub_type = str(config['sub_type']).strip().lower()
+            if sub_type in ('v4', 'v6', 'web'):
+                data['sub_type'] = sub_type
+
+        if 'facets' in config and config['facets']:
+            data['facets'] = str(config['facets']).strip()
+
+        if 'ignore_cache' in config and config['ignore_cache'] is not None:
+            ignore_cache_val = config['ignore_cache']
+            if isinstance(ignore_cache_val, bool):
+                data['ignore_cache'] = ignore_cache_val
+            elif isinstance(ignore_cache_val, str):
+                data['ignore_cache'] = ignore_cache_val.lower() in ('true', '1', 'yes')
+            elif isinstance(ignore_cache_val, (int, float)):
+                data['ignore_cache'] = ignore_cache_val != 0
+
+        # Set request headers (ZoomEye API uses API Key authentication)
+        headers = {
+            'API-KEY': api_key,
+            'Content-Type': 'application/json'
+        }
+
+        # Send the request (ZoomEye API uses the POST method)
+        try:
+            response = requests.post(base_url, json=data, headers=headers, timeout=30)
+            response.raise_for_status()
+
+            result_data = response.json()
+
+            # Check for errors returned by the ZoomEye API
+            # ZoomEye API returns code 60000 on success
+            if result_data.get('code') != 60000:
+                error_code = result_data.get('code', 'unknown')
+                error_msg = result_data.get('message', 'unknown error')
+                error_result = {
+                    "status": "error",
+                    "message": f"ZoomEye API error: {error_msg}",
+                    "error_code": error_code,
+                    "suggestion": "Please check that the API key is correct, or that the query statement follows ZoomEye syntax"
+                }
+                print(json.dumps(error_result, ensure_ascii=False, indent=2))
+                sys.exit(1)
+
+            # Format the output
+            # ZoomEye API returns the data in the data field
+            data_list = result_data.get('data', [])
+            if isinstance(data_list, dict):
+                nested = None
+                for key in ('data', 'items', 'matches', 'results', 'list', 'records'):
+                    value = data_list.get(key)
+                    if isinstance(value, list):
+                        nested = value
+                        break
+                data_list = nested if nested is not None else []
+            if not isinstance(data_list, list):
+                data_list = []
+            output = {
+                "status": "success",
+                "query": result_data.get('query', query),
+                "total": result_data.get('total', 0),
+                "page": result_data.get('page', 1),
+                "pagesize": result_data.get('pagesize', 10),
+                "results_count": len(data_list),
+                "results": data_list,
+                "message": f"Successfully retrieved {len(data_list)} results"
+            }
+
+            print(json.dumps(output, ensure_ascii=False, indent=2))
+
+        except requests.exceptions.RequestException as e:
+            error_result = {
+                "status": "error",
+                "message": f"Request failed: {str(e)}",
+                "suggestion": "Please check the network connection or the status of the ZoomEye API service"
+            }
+            print(json.dumps(error_result, ensure_ascii=False, indent=2))
+            sys.exit(1)
+
+    except Exception as e:
+        error_result = {
+            "status": "error",
+            "message": f"Execution error: {str(e)}",
+            "type": type(e).__name__
+        }
+        print(json.dumps(error_result, ensure_ascii=False, indent=2))
+        sys.exit(1)
+enabled: false
+short_description: "ZoomEye cyberspace search engine with flexible query parameter configuration"
+description: |
+  ZoomEye is a cyberspace mapping search engine that searches internet assets using a variety of query conditions.
+
+  **Key features:**
+  - Supports multiple query syntaxes (app, title, domain, ip, port, country, city, etc.)
+  - Flexible field return configuration
+  - Paginated queries (up to 10000 results per page)
+  - Supports IPv4, IPv6, and web asset search
+  - Supports facet (statistics) queries
+  - Rich asset information returned
+
+  **Use cases:**
+  - Asset discovery and enumeration
+  - Assessing the scope of vulnerability impact
+  - Security situational awareness
+  - Threat intelligence collection
+  - Bug bounty information gathering
+
+  **Query syntax:**
+
+  **Search rules:**
+  - The search scope includes devices (IPv4, IPv6) and websites (domains)
+  - Search strings are case-insensitive and wrapped in quotes (e.g. `"Cisco System"`)
+  - Use `==` for exact matching (case-sensitive)
+
+  **Logical operators:**
+  - `=` - search for assets containing the keyword, e.g. `title="knownsec"`
+  - `==` - exact match (case-sensitive), e.g. `title=="knownsec"`
+  - `||` - OR, e.g. `service="ssh" || service="http"`
+  - `&&` - AND, e.g. `device="router" && after="2020-01-01"`
+  - `!=` - NOT, e.g. `country="US" && subdivisions!="new york"`
+  - `()` - grouping for precedence, e.g. `(country="US" && port!=80) || (country="US" && title!="404 Not Found")`
+  - `*` - fuzzy search, e.g. `title="*google"`
+
+  **Syntax keywords:**
+
+  **Geolocation:** `country="CN"`, `subdivisions="beijing"`, `city="changsha"`
+
+  **IP/domain:** `ip="8.8.8.8"`, `cidr="52.2.254.36/24"`, `domain="baidu.com"`, `hostname="google.com"`, `port=80`, `asn=42893`, `org="Stanford University"`, `isp="China Mobile"`
+
+  **Fingerprinting:** `app="Cisco ASA SSL VPN"`, `service="ssh"`, `device="router"`, `os="RouterOS"`, `title="Cisco"`, `product="Cisco"`, `protocol="TCP"`, `industry="government"`, `is_honeypot="True"`
+
+  **Certificate search:** `ssl="google"`, `ssl.cert.fingerprint="..."`, `ssl.jarm="..."`, `ssl.ja3s=...`, `ssl.version="TLSv1.3"`, `ssl.cert.subject.cn="example.com"`
+
+  **HTTP-related:** `banner="FTP"`, `http.header="http"`, `http.header_hash="..."`, `http.header.server="Nginx"`, `http.header.status_code="200"`, `http.body="document"`, `http.body_hash="..."`
+
+  **Time search:** `after="2020-01-01"`, `before="2020-01-01"` (must be combined with other conditions)
+
+  **Other:** `dig="baidu.com 220.181.38.148"`, `iconhash="f3418a443e7d841097c714d69ec4bcb8"`, `filehash="0b5ce08db7fb8fffe4e14d05588d49d9"`, `is_ipv4=true`, `is_ipv6=true`, `is_domain=true`
+
+  **Query examples:**
+  - `port=80 && service="http"` - search for network devices running HTTP on port 80
+  - `city=nagoya && port=443 && service=ssl` - search for devices in Nagoya running SSL on port 443
+  - `country=us && os=windows` - search for devices in the US running Windows
+  - `app="Microsoft NTP"` - search for devices running the Microsoft NTP application
+  - `city=tokyo && device=webcam` - search for webcams in Tokyo
+  - `after="2020-01-01" && port=50050` - search for port 50050 assets indexed after 2020-01-01
+  - `os=linux && port=22 && country=PL` - search for Linux assets with port 22 open in Poland
+  - `service=ftp && hostname=example` - search for FTP services with the hostname example
+  - `http.body="Knownsec"` - search for assets whose body contains "Knownsec"
+
+  **Notes:**
+  - API calls are rate-limited; use them judiciously
+  - The number of results returned is limited by account permissions
+  - A valid ZoomEye API key is required
+parameters:
+  - name: "query"
+    type: "string"
+    description: |
+      ZoomEye query statement (required)
+
+      Search query statement that supports ZoomEye query syntax. Wrap strings in quotes and join conditions with logical operators.
+      Examples:
+      - app="Apache"
+      - title="login"
+      - domain="example.com"
+      - ip="1.1.1.1"
+      - port=80
+      - country="CN"
+      - app="Apache" && country="CN"
+      - service="ssh" || service="http"
+      - port=80 && service="http"
+    required: true
+    position: 1
+    format: "positional"
+  - name: "page"
+    type: "int"
+    description: |
+      Page number (optional)
+
+      The page number to return, starting from 1; default is 1.
+      Used for paginating through large numbers of results.
+    required: false
+    position: 2
+    format: "positional"
+    default: 1
+  - name: "pagesize"
+    type: "int"
+    description: |
+      Number of results per page (optional)
+
+      The number of results to return per page; default is 10.
+      Valid range: 1-10000, subject to account permissions.
+    required: false
+    position: 3
+    format: "positional"
+    default: 5
+  - name: "fields"
+    type: "string"
+    description: |
+      List of fields to return (optional)
+
+      Fields to return, separated by commas.
+      Default fields: ip,port,domain,update_time
+      Available fields: ip,port,domain,url,hostname,os,service,title,version,device,rdns,product,header,body,banner,update_time,country,province,city,isp,organization,asn,protocol,ssl,ssl.jarm,ssl.ja3s, etc.
+    required: false
+    position: 4
+    format: "positional"
+    default: "ip,port,domain,update_time"
+  - name: "sub_type"
+    type: "string"
+    description: |
+      Data type (optional)
+
+      Specifies the type of data to search.
+      Valid values: v4 (IPv4 devices, default), v6 (IPv6 devices), web (website assets)
+    required: false
+    position: 5
+    format: "positional"
+    default: "v4"
+  - name: "facets"
+    type: "string"
+    description: |
+      Facets (optional)
+
+      Fields to aggregate, separated by commas.
+      Supported: country, subdivisions, city, product, service, device, os, port
+    required: false
+    position: 6
+    format: "positional"
+  - name: "ignore_cache"
+    type: "bool"
+    description: |
+      Whether to ignore the cache (optional)
+
+      When set to true, the cache is ignored and the latest data is fetched.
+      Default false; available to Commercial and higher-tier users.
+    required: false
+    position: 7
+    format: "positional"
+    default: false

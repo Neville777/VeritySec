@@ -1,0 +1,71 @@
+name: "dalfox"
+command: "dalfox"
+# dalfox v2+ uses subcommands; single-target mode is `dalfox url <target>`, root-level -u is no longer supported
+args:
+  - "url"
+enabled: true
+short_description: "Advanced XSS vulnerability scanner"
+description: |
+  Dalfox is an advanced XSS vulnerability scanner that supports multiple XSS detection techniques.
+
+  **Main features:**
+  - XSS vulnerability detection
+  - Blind XSS testing
+  - DOM mining
+  - Dictionary mining
+
+  **Use cases:**
+  - XSS vulnerability testing
+  - Web application security testing
+  - Bug bounty reconnaissance
+  - Security testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: |
+      Target URL. In dalfox single-target mode this is the url subcommand, and the value is passed here as the first positional argument after url.
+      Equivalent CLI example: dalfox url "http://target/page?q=test"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "pipe_mode"
+    type: "bool"
+    description: "Read input using pipe mode"
+    required: false
+    flag: "--pipe"
+    format: "flag"
+    default: false
+  - name: "blind"
+    type: "string"
+    description: "Blind XSS callback address (e.g. a Burp Collaborator URL)"
+    required: false
+    flag: "--blind"
+    format: "flag"
+  - name: "mining_dom"
+    type: "bool"
+    description: "Enable DOM mining"
+    required: false
+    flag: "--mining-dom"
+    format: "flag"
+    default: true
+  - name: "mining_dict"
+    type: "bool"
+    description: "Enable dictionary mining"
+    required: false
+    flag: "--mining-dict"
+    format: "flag"
+    default: true
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional dalfox arguments. Used to pass dalfox options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

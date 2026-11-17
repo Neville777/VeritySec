@@ -1,0 +1,53 @@
+name: "nbtscan"
+command: "nbtscan"
+enabled: true
+short_description: "NetBIOS name scanning tool"
+description: |
+  Nbtscan is a NetBIOS name scanning tool used to discover Windows systems on the network.
+
+  **Key features:**
+  - NetBIOS name scanning
+  - Windows system discovery
+  - Network mapping
+  - Fast scanning
+
+  **Use cases:**
+  - Windows network discovery
+  - NetBIOS enumeration
+  - Network mapping
+  - Penetration testing
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target IP address or range"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "verbose"
+    type: "bool"
+    description: "Verbose output"
+    required: false
+    flag: "-v"
+    format: "flag"
+    default: false
+  - name: "timeout"
+    type: "int"
+    description: "Timeout (seconds)"
+    required: false
+    flag: "-t"
+    format: "flag"
+    default: 2
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional nbtscan arguments. Used to pass nbtscan options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

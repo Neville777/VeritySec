@@ -1,0 +1,630 @@
+# ============================================
+# VeritySec Configuration File
+# ============================================
+# This configuration file can be edited visually through the Web UI
+# Click the "Settings" button in the top-right corner to change settings
+# ============================================
+
+# ============================================
+# System Settings
+# ============================================
+
+# Version number shown in the frontend (optional; if omitted, the default version is shown). After a one-click update completes, the value of this file in the new code
+# is used to update the version field of your config.yaml (the header version and static asset cache follow the code).
+version: "v1.7.24"
+# Server configuration
+server:
+  host: 127.0.0.1 # Listen address; 0.0.0.0 means listen on all network interfaces
+  port: 8080 # Service port; when TLS is not enabled this is http://localhost:8080
+  # Exact Origins of other trusted web integrations. Chromium browser extensions are detected automatically and need no configuration; do not use wildcards.
+  # cors_allowed_origins:
+  #   - https://trusted-integration.example
+  # --- Optional: HTTPS + HTTP/2 (eases the browser's per-origin HTTP/1.1 concurrent connection limit and makes multi-stream Deep streaming more stable) ---
+  # Conditions to enable TLS (any one is enough): tls_enabled: true, or tls_auto_self_sign: true, or both tls_cert_path + tls_key_path are configured.
+  # After enabling, access it via https://127.0.0.1:<this port>/; if you still use http:// on the same port, it will automatically 308-redirect to HTTPS (set tls_http_redirect: false to turn this off).
+  tls_enabled: true
+  # When HTTPS is enabled, whether plain HTTP is automatically redirected to HTTPS (default true; TLS/HTTP is sniffed on the same port and then routed)
+  # tls_http_redirect: true
+  # Option A (recommended for production): paths to the PEM certificate and private key
+  # tls_cert_path: /path/to/fullchain.pem
+  # tls_key_path: /path/to/privkey.pem
+  # Option B (local/testing only): when there is no certificate file, use an in-memory self-signed certificate (the browser will warn it is untrusted; SAN includes localhost / 127.0.0.1)
+  tls_auto_self_sign: true
+# Authentication configuration
+auth:
+  session_duration_hours: 12 # Login validity (hours); after it expires you need to log in again
+# Logging configuration
+log:
+  level: info # Log level: debug, info, warn, error
+  output: stdout # Log output destination: stdout, stderr, or a file path
+  diagnostic_dir: log # Extra directory for warn-and-above diagnostic logs, split by local date; relative to the process working directory
+  diagnostic_retention_days: 14 # Retention in days (including today); omit or <= 0 to use 14 days
+  diagnostic_disabled: false # true disables the extra diagnostic logs; restart required after changing
+# Platform operation audit (System Settings -> Log Audit; conversation bodies and every tool call are not recorded)
+audit:
+  enabled: true
+  retention_days: 15 # 0 means no automatic cleanup
+  max_detail_bytes: 8192
+  auth_failure_cooldown_seconds: 60 # Minimum interval (seconds) between audit entries for login/password-change failures from the same IP; default 60 if unset; -1 disables throttling
+# MCP status monitor execution record retention (tool_executions table)
+monitor:
+  retention_days: 90 # Default 90 if omitted; 0 means no automatic cleanup
+# Runtime space garbage cleanup (System Settings -> Storage Cleanup)
+# Retention policy for disk artifacts such as the Agent workspace, tool output cache, C2 artifacts, and conversation uploads.
+# auto_clean is off by default: after an upgrade, existing data will not be deleted without the administrator knowing;
+# when it is off, you can still preview and run cleanup manually on the "Storage Cleanup" page.
+storage:
+  auto_clean: false # true enables scheduled background cleanup
+  interval_minutes: 60 # Background cleanup interval (minutes); minimum 5
+  orphan_grace_days: 1 # When a conversation/project has been deleted but its directory remains, how many idle days before it is reclaimed
+  active_grace_hours: 24 # Conversations with recent activity are always skipped, to avoid deleting data of running tasks by mistake
+  # Per-category retention_days: when omitted, the defaults below are used; 0 means do not clean by retention period (orphan directories are still reclaimed)
+  categories:
+    workspace: # Agent workspace tmp/workspace; default 30 days
+      enabled: true
+      retention_days: 30
+    reduction: # Oversized tool output persisted to disk tmp/reduction; default 7 days (purely derived data)
+      enabled: true
+      retention_days: 7
+    conversation_artifacts: # Summary and oversized-input ledger data/conversation_artifacts; default 30 days
+      enabled: true
+      retention_days: 30
+    plantask: # Multi-agent plan board skills/.eino/plantask; default 30 days (purely derived data)
+      enabled: true
+      retention_days: 30
+    c2_artifacts: # C2 returned screenshots/uploads/delivered files/payloads tmp/c2; default 30 days
+      enabled: true # Note: after payloads are cleaned up, the corresponding download links stop working
+      retention_days: 30
+    chat_uploads: # Conversation upload attachments chat_uploads; default 90 days
+      enabled: true
+      retention_days: 90
+    workflow_checkpoints: # Workflow checkpoints data/workflow-checkpoints; default 7 days
+      enabled: true
+      retention_days: 7
+    diagnostic_logs: # Diagnostic logs log/diagnostic-*.log; default 14 days
+      enabled: true # Takes effect independently of log.diagnostic_retention_days; whichever comes first wins
+      retention_days: 14
+# ============================================
+# Conversation-related Configuration
+# ============================================
+
+# AI channel configuration (multiple OpenAI-compatible / Claude channels can be saved)
+# default_channel specifies which channel is used for new conversations and tasks that do not explicitly choose a channel.
+# Each channels.<id> requires: api_key, base_url, model.
+# Supported API providers:
+#   - OpenAI: https://api.openai.com/v1
+#   - DeepSeek: https://api.deepseek.com/v1
+#   - Other OpenAI-protocol-compatible APIs
+# Common models: gpt-4, gpt-3.5-turbo, deepseek-chat, claude-3-opus, etc.
+# provider: allowed values openai_compatible (default) | claude (Eino native Anthropic Messages API)
+ai:
+  default_channel: qwen-max
+  channels:
+    qwen-max:
+      name: Qwen Max
+      provider: openai_compatible
+      base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: sk-xxxxxxx
+      model: qwen3-max
+      max_total_tokens: 120000
+      max_completion_tokens: 32768
+      # headers: optional. Append or override HTTP request headers sent to the model gateway; values support ${ENV_VAR} and ${ENV_VAR:-default}.
+      # For compatibility with third-party OpenAI-compatible providers that require private auth headers, version headers, or organization headers (such as aggregation gateways like opencode).
+      # Once configured, they override built-in headers of the same name (Authorization, User-Agent, etc.); entries with empty values are ignored.
+      # headers:
+      #   X-Api-Key: ${OPENCODE_API_KEY}
+      #   x-opencode-session: "%session_id%" # Automatically replaced with the current conversation ID
+      #   X-Client-Name: veritysec
+      #   HTTP-Referer: https://example.com
+      # When custom headers are configured, only same-origin redirects are allowed; redirects across hosts, ports, or protocols are rejected.
+      # HITL audit inherits the primary channel headers only when provider/base_url/api_key are not explicitly configured;
+      # if an independent audit identity needs request headers, configure them separately in hitl.audit_model.headers.
+      # Empty headers are equivalent to not configured; all custom header values are masked as sensitive values in the settings API.
+      # Eino-path model reasoning: DeepSeek/OpenAI use thinking / reasoning_effort; Claude 4.6+ uses adaptive + output_config.effort (sent only when effort is explicitly configured); 3.7 uses enabled+budget_tokens:10000 (documentation example), effort is not mapped, use extra_request_fields for a custom budget
+      reasoning:
+        mode: on # auto | on | off; off: OpenAI/Claude get no reasoning fields, DeepSeek sends thinking.type=disabled (it thinks by default)
+        effort: high # low | medium | high | max | xhigh (top tier: OpenAI commonly uses xhigh, some gateways use max, sent as-is); empty means unspecified
+        allow_client_reasoning: true # When false, reasoning in the conversation request body is ignored and only the settings below apply
+        profile: openai_compat # auto | deepseek_compat | openai_compat | output_config_effort
+        # extra_request_fields: {} # Optional: administrator-defined root-level JSON fragment (advanced)
+    # qwen-plus:
+    #   name: Qwen Plus Fallback
+    #   provider: openai_compatible
+    #   base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    #   api_key: sk-xxxxxxx
+    #   model: qwen-plus
+    #   max_total_tokens: 120000
+    #   max_completion_tokens: 32768
+# Vision analysis (analyze_image MCP tool; images appear only within a single VL call, and the Agent context keeps only a text summary)
+vision:
+  enabled: false # When true and model is non-empty, analyze_image is registered
+  model: qwen-vl # VL model name (required when enabled)
+  api_key: "" # Leave empty to reuse the default AI channel api_key
+  base_url: "" # Leave empty to reuse the default AI channel base_url
+  provider: # Leave empty to reuse the default AI channel provider (openai_compatible | claude)
+  max_image_bytes: 5242880 # Raw file size limit (bytes), default 5MB
+  max_dimension: 2048 # Pixels for scaling the long edge
+  jpeg_quality: 82
+  max_payload_bytes: 524288 # Upper limit of the encoded payload sent to the VL API, default 512KB
+  skip_preprocess_below_bytes: 2097152 # Below 2MB, with long edge <= max_dimension and size <= max_payload, the original image is sent directly; 0 = always compress
+  detail: auto # low | high | auto (Eino ImageURLDetail)
+  timeout_seconds: 60
+# ============================================
+# Asset Management (cyberspace mapping search) Configuration (optional)
+# ============================================
+# Used by the "Asset Management -> Information Gathering" page to call the FOFA / ZoomEye / Quake / Shodan APIs
+# The backend proxies the requests so the frontend does not expose keys; environment variables take higher priority
+fofa:
+  base_url: https://fofa.info/api/v1/search/all # Optional; leave empty to use the default
+  api_key: "" # FOFA API Key (optional; recommended to fill in under System Settings)
+zoomeye:
+  base_url: https://api.zoomeye.ai/v2/search # Optional; leave empty to use the default
+  api_key: "" # ZoomEye API Key; can also be configured via the ZOOMEYE_API_KEY environment variable
+quake:
+  base_url: https://quake.360.net/api/v3/search/quake_service # Optional; leave empty to use the default
+  api_key: "" # Quake API Token; can also be configured via the QUAKE_API_KEY environment variable
+shodan:
+  base_url: https://api.shodan.io # Optional; leave empty to use the default
+  api_key: "" # Shodan API Key; can also be configured via the SHODAN_API_KEY environment variable
+# Agent configuration
+# When the maximum number of iterations is reached, the AI automatically summarizes the test results
+agent:
+  # Restart the service after changes; they apply to new tasks. For example 1440 = 24 hours; the per-tool timeout takes effect independently.
+  task_timeout_minutes: 600 # Task execution timeout (minutes); unset = 600, 0 = unlimited, negative is invalid; resumed runs restart the timer
+  max_iterations: 12000 # Global maximum iterations (inherited by single-agent / Deep / Supervisor / Plan-Execute main executor / sub-agents; max_iterations>0 in agents/*.md can override it individually)
+  tool_timeout_minutes: 60 # Maximum duration of a single tool execution (minutes); terminated automatically on timeout; 0 means unlimited (not recommended, prone to long hangs)
+  tool_wait_timeout_seconds: 300 # Maximum time a tool is waited on in this round (seconds); on expiry it returns execution_id, the worker keeps running in the background, and wait_tool_execution can be used to keep waiting; 0 = wait until completion
+  external_mcp_max_concurrent_per_server: 5 # Number of tools a single external MCP server runs concurrently; 0 = default 2; negative = unlimited
+  external_mcp_max_concurrent_total: 16 # Global concurrency cap for all external MCP tools; 0 = default 16; negative = unlimited
+  external_mcp_circuit_failure_threshold: 15 # After how many consecutive failures a single external MCP server trips the circuit breaker; 0 = default 3; negative = disable the breaker
+  external_mcp_circuit_cooldown_seconds: 60 # Circuit breaker cooldown in seconds; 0 = default 60
+  shell_no_output_timeout_seconds: 1200 # execute/exec is terminated after this long with no new output (seconds); general anti-hang guard; 0 = default 300; -1 = disabled
+  workspace_root_dir: "" # Root path of the session working directory (curl/wget downloads, read_file/glob/grep local analysis); empty = tmp/workspace, isolated under it by projects/{id} or conversations/{id}; do not use the system /tmp
+  # system_prompt_path: prompts/single-agent.md # Optional: single-agent system prompt file (relative to the directory of this config file); when non-empty and readable, it replaces the built-in prompt
+
+  system_prompt_path: ""
+# Call interception: takes effect immediately after editing and saving in "Security -> Call Interception"; independent of the HITL approval whitelist.
+# When an older config omits tool_guard, government domain protection is also enabled by default. Restart is required after manually editing the YAML.
+tool_guard:
+  enabled: true
+  rules:
+    - id: government-domains
+      name: Government website protection
+      enabled: true
+      # Go/RE2 regex; the named capture group match is used for {match} in the notice.
+      pattern: '(?i)(?:^|[^\p{L}\p{M}\p{N}_.-])(?P<match>(?:(?:[\p{L}\p{M}\p{N}_*-]+\.)+gov(?:\.[\p{L}\p{M}\p{N}_*-]+)*|gov(?:\.[\p{L}\p{M}\p{N}_*-]+)+|\.gov(?:\.[\p{L}\p{M}\p{N}_*-]+)*)\.?)(?:$|[^\p{L}\p{M}\p{N}_.-])'
+      # Supports {match}, {tool}, {rule}; leave empty to use the generic notice.
+      message: 'Detected {match}; attacking government websites is prohibited. Check the target and authorization scope, and switch to an authorized non-government target.'
+
+# Human-in-the-loop (HITL) global whitelist: tools listed here are always exempt from approval, merged as a union with the "Whitelisted tools (exempt from approval, comma-separated)" on the conversation page; "Apply" in the sidebar can merge into this list and takes effect immediately.
+# For non-whitelisted tools, when the approver = audit Agent, the prompt is chosen by the session HITL mode:
+#   approval → audit_agent_prompt
+#   review_edit → audit_agent_prompt_review_edit (may edit arguments before allowing)
+hitl:
+  # Global default HITL mode: off = disabled, approval = approval mode, review_edit = review and edit; inherited when a new session has no separate configuration
+  default_mode: off
+  # Global default approver: human = manual approval, audit_agent = audit Agent; inherited when a new session has no separate configuration
+  default_reviewer: human
+  # Global default approval wait limit (seconds): 300 = 5 minutes, 0 = unlimited; inherited when a new session has no separate configuration
+  default_timeout_seconds: 300
+  # Audit Agent backend, choose one: openai = compatible-protocol chat model (JSON prompt); typesafe = TypeSafe Jev structured allow/block.
+  audit_backend: openai
+  # Dedicated model for the audit Agent. For the openai backend, empty fields reuse the main model; for the typesafe backend api_key is required and the main model key is not inherited.
+  audit_model:
+    provider: "" # openai / claude; only effective for the openai backend, empty follows openai.provider
+    base_url: "" # openai backend: empty follows the main model; typesafe backend: empty uses https://api.typesafe.ai
+    api_key: "" # openai backend: empty follows the main model; typesafe backend: fill in the TypeSafe API Key
+    model: "" # openai backend: a small model is recommended; typesafe backend: empty uses jev-latest
+    reasoning:
+      profile: "" # auto / deepseek_compat / openai_compat; only controls the thinking field of audit requests
+  # Retention days for decided audit logs (consistent with MCP monitoring; default 90 if omitted; 0 means no automatic cleanup)
+  retention_days: 90
+  # Add or remove tools according to the real tool names in your environment (consistent with the sidebar, case-insensitive); if you do not need a global exemption from approval, set it to []
+  tool_whitelist: [read_file, ls, list_dir, glob, grep, tool_search, upsert_project_fact, get_project_fact, list_project_facts, search_project_facts, list_vulnerabilities, get_vulnerability, get_asset, query_assets, list_knowledge_risk_types, get_tool_execution, wait_tool_execution, batch_task_list, batch_task_get, manage_webshell_list, c2_event, c2_file]
+  # audit_agent_prompt: |  # Approval mode; leave empty to use the built-in default, editable on the "Human-in-the-loop" page. For the openai backend it is the chat prompt; for the typesafe backend it is the Jev organization policy
+  # audit_agent_prompt_review_edit: |  # Review-and-edit mode; leave empty to use the built-in default
+
+  audit_agent_prompt: |-
+    You are the VeritySec human-in-the-loop audit Agent. Review whether the tool call the Agent is about to execute will cause substantial harm to the system.
+
+    You will receive JSON containing fields such as hitlMode, toolName, arguments/argumentsObj, userMessage, thinking, reasoningChain, planning, etc.
+
+    Rule priority:
+    - Rules that must reject
+    - Rules that must approve
+    - default allow rule
+
+    Rule matching requirements:
+    - If both reject and approve rules are matched simultaneously, must reject.
+    - Each verdict must cite a rule number; do not output “matched rule: none”.
+    - when no explicit reject or approve rule is matched and no clear destructive behavior is found, D1: default allow.
+    - Do not judge a script as harmless solely based on “local execution”, “timeout set”, or “filename contains test”; you must inspect the actual command, code, or request parameters.
+    - If the specific script content is not visible, state “current parameters do not show clearly high-risk actions”; do not assert “no persistent impact”.
+
+    Verdict tone (default allow):
+    - The vast majority of penetration-testing actions (including all types of attack payloads) should be allowed
+    - Before making a verdict, determine: 1. What does this request do (understand the request content)? 2. What are the consequences of this request?
+    - Only reject when it is “clearly and directly destructive to the target business system's normal operation, or causes real user data loss / irreversible tampering”
+    - When information is insufficient, parameters are slightly broad, or the intent is merely probing -> approve
+    - When in doubt -> approve (better to allow a recoverable test than to mistakenly block a legitimate attack)
+
+    High-risk scenarios that must be rejected (examples, non-exhaustive):
+    - Modify/reset any user or admin password, force-logout real users
+    - Modify server or service configuration (system config, web/database parameters, firewall, startup items, scheduled tasks)
+    - Modify/create/delete users, roles, permissions (account system tampering)
+    - Delete or massively destroy data/files (DROP/TRUNCATE/DELETE entire tables, rm critical files, clear database)
+    - Stop, disable, or restart business services (systemctl stop, kill critical processes, shutdown, reboot)
+    - Large-scale stress testing or high concurrency causing DoS
+
+    The following scenarios must be approved (even if they appear “aggressive” or involve write actions):
+    - All types of vulnerability probing and exploitation payloads (SQL injection including read/write types, command injection, deserialization, file inclusion, path traversal, SSRF, SSTI, XXE, etc.)
+    - File upload testing, including uploading webshells, writing webshell files
+    - Command execution probing, reverse shell, dnslog / data exfiltration probing
+    - Database command execution, file writing, scheduled task writing, in-memory trojan injection and other getshell exploits
+    - Normal-rate credential brute-forcing (non-DoS level)
+    - Information gathering, port/directory scanning, enumeration, crawling
+    - Read, query, and probing actions (including sensitive files)
+    - Post-compromise harmless reconnaissance commands (whoami/id/uname/ls/cat, etc.)
+    - Requests with broad parameters but no clear destructive intent
+
+    Verdict principles:
+    - “Write” itself is not a reason to block -- penetration testing heavily relies on write actions (injection, upload, brute-force, getshell)
+    - The key is whether it destroys “business availability / critical data integrity”
+    - Only reject when explicitly matching the reject list above
+
+    Output only a single line of JSON, no markdown code blocks:
+    {“decision”:”approve”|”reject”,”comment”:”actual actions: ...; consequences if successful: ...; matched rule: ...”}
+  audit_agent_prompt_review_edit: |-
+    You are the VeritySec human-in-the-loop audit Agent. Review whether the tool call the Agent is about to execute will cause substantial harm to the system.
+
+    You will receive JSON containing fields such as hitlMode, toolName, arguments/argumentsObj, userMessage, thinking, reasoningChain, planning, etc.
+
+    Rule priority:
+    - Rules that must reject
+    - Rules that must approve
+    - default allow rule
+
+    Rule matching requirements:
+    - If both reject and approve rules are matched simultaneously, must reject.
+    - Each verdict must cite a rule number; do not output “matched rule: none”.
+    - when no explicit reject or approve rule is matched and no clear destructive behavior is found, D1: default allow.
+    - Do not judge a script as harmless solely based on “local execution”, “timeout set”, or “filename contains test”; you must inspect the actual command, code, or request parameters.
+    - If the specific script content is not visible, state “current parameters do not show clearly high-risk actions”; do not assert “no persistent impact”.
+
+    Verdict tone (default allow):
+    - The vast majority of penetration-testing actions (including all types of attack payloads) should be allowed
+    - Before making a verdict, determine: 1. What does this request do (understand the request content)? 2. What are the consequences of this request?
+    - Only reject when it is “clearly and directly destructive to the target business system's normal operation, or causes real user data loss / irreversible tampering”
+    - When information is insufficient, parameters are slightly broad, or the intent is merely probing -> approve
+    - When in doubt -> approve (better to allow a recoverable test than to mistakenly block a legitimate attack)
+
+    High-risk scenarios that must be rejected (examples, non-exhaustive):
+    - Modify/reset any user or admin password, force-logout real users
+    - Modify server or service configuration (system config, web/database parameters, firewall, startup items, scheduled tasks)
+    - Modify/create/delete users, roles, permissions (account system tampering)
+    - Delete or massively destroy data/files (DROP/TRUNCATE/DELETE entire tables, rm critical files, clear database)
+    - Stop, disable, or restart business services (systemctl stop, kill critical processes, shutdown, reboot)
+    - Large-scale stress testing or high concurrency causing DoS
+
+    The following scenarios must be approved (even if they appear “aggressive” or involve write actions):
+    - All types of vulnerability probing and exploitation payloads (SQL injection including read/write types, command injection, deserialization, file inclusion, path traversal, SSRF, SSTI, XXE, etc.)
+    - File upload testing, including uploading webshells, writing webshell files
+    - Command execution probing, reverse shell, dnslog / data exfiltration probing
+    - Database command execution, file writing, scheduled task writing, in-memory trojan injection and other getshell exploits
+    - Normal-rate credential brute-forcing (non-DoS level)
+    - Information gathering, port/directory scanning, enumeration, crawling
+    - Read, query, and probing actions (including sensitive files)
+    - Post-compromise harmless reconnaissance commands (whoami/id/uname/ls/cat, etc.)
+    - Requests with broad parameters but no clear destructive intent
+
+    Verdict principles:
+    - “Write” itself is not a reason to block -- penetration testing heavily relies on write actions (injection, upload, brute-force, getshell)
+    - The key is whether it destroys “business availability / critical data integrity”
+    - Only reject when explicitly matching the reject list above
+
+    Output only a single line of JSON, no markdown code blocks:
+    {“decision”:”approve”|”reject”,”comment”:”actual actions: ...; consequences if successful: ...; matched rule: ...”,”editedArguments”:{...}}
+
+    editedArguments rules (fill in only when approving and parameter modification is needed; otherwise omit this field):
+    - Provide the complete replacement tool parameter object with key names matching argumentsObj
+    - Make only the minimal necessary modifications to narrow scope and eliminate risk (e.g., restrict path, remove dangerous flags)
+    - Do not expand the attack surface: do not broaden target scope, escalate permissions, or introduce destructive parameters
+    - If parameters cannot be safely modified and the above high-risk scenarios apply, reject instead of forcing an approve
+# Multi-agent and Eino single-agent (CloudWeGo Eino ADK; single-agent entry /api/eino-agent*, multi-agent /api/multi-agent*)
+# Dependencies are pulled in go.mod; if the download fails you can set: go env -w GOPROXY=https://proxy.golang.org,direct
+# Deep / Plan-Execute / Supervisor is specified by the mode chosen on the conversation page and WebShell in the request body's orchestration; bots follow robot_default_agent_mode
+multi_agent:
+  enabled: true
+  robot_default_agent_mode: eino_single # Default for WeCom/DingTalk/Lark bots: eino_single | deep | plan_execute | supervisor
+  batch_use_multi_agent: false # When true, each subtask in the "Batch Tasks" queue also goes through Eino multi-agent (higher cost)
+  # plan_execute only: upper limit of the outer execute<->replan loop; 0 means the Eino default of 10. For main/sub-agent ReAct rounds see agent.max_iterations.
+  plan_execute_loop_max_iterations: 0
+  sub_agent_user_context_max_runes: 0 # Original user text injected into the sub-agent task description; 0 = no truncation (default), >0 = total character limit, negative = disabled
+  without_general_sub_agent: false # When false, Deep's built-in general-purpose sub-agent is kept
+  without_write_todos: false
+  orchestrator_instruction: "" # Deep main agent: the body of agents/orchestrator.md (or a single .md with kind: orchestrator) takes precedence; used when the body is empty; if both are empty, the Eino default applies
+  orchestrator_instruction_plan_execute: "" # plan_execute main agent: the body of agents/orchestrator-plan-execute.md takes precedence; used when the body is empty; if both are empty, the built-in plan_execute prompt is used (Deep's orchestrator_instruction is not used)
+  orchestrator_instruction_supervisor: "" # supervisor main agent: the body of agents/orchestrator-supervisor.md takes precedence; used when the body is empty; if both are empty, the built-in supervisor prompt is used (the transfer/exit instructions are still appended at run time; Deep's orchestrator_instruction is not used)
+  # Eino official Skills: progressive disclosure + optional local files/Shell (eino-ext local backend). See skills_dir for the Skills directory.
+  eino_skills:
+    disable: false # true: do not register the skill progressive-disclosure middleware and do not mount local FS/Shell tools; false: load according to the switches below
+    filesystem_tools: true # true: register read_file/glob/grep/write/edit/execute (use caution in authorized environments); false: skills only, no local read/write or Shell exposed
+    skill_tool_name: skill # Name of the "load skill" tool callable by the model, normally keep skill; just match the call name in the skill package docs
+  # Eino ADK middleware and Deep/Supervisor/plan_execute Executor tuning (struct: internal/config/config.go -> MultiAgentEinoMiddlewareConfig)
+  # plan_execute: the patch/reduction/tool_search/plantask etc. below also apply to the Executor (via ExecPreMiddlewares); Planner/Replanner do not mount the MCP pre-middleware.
+  eino_middleware:
+    patch_tool_calls: true # true: patch dangling tool_calls with no tool_result in history (more stable after stream interruption/retry); false: disabled; when the field is omitted it defaults to true
+    tool_search_enable: true # true: when the number of tools >= min, enable tool_search; only the first N tools stay resident and the rest are unlocked on demand by regex, saving tokens and reducing mis-selection; false: all tools go into the context
+    tool_search_min_tools: 20 # tool_search is enabled only once this number is reached (avoids needless work when there are few tools); used together with always_visible
+    tool_search_always_visible: 12 # Number of tools always exposed directly to the model (order follows the role tool list); the remaining tools go into a dynamic pool and require tool_search to unlock
+    tool_search_always_visible_tools: [read_file, glob, grep, analyze_image, write_file, edit_file, execute, task, transfer_to_agent, exit, write_todos, skill, tool_search, TaskCreate, TaskGet, TaskUpdate, TaskList, record_vulnerability, list_vulnerabilities, get_vulnerability, get_tool_execution, wait_tool_execution, cancel_tool_execution, list_knowledge_risk_types, search_knowledge_base, webshell_exec, webshell_file_list, webshell_file_read, webshell_file_write, manage_webshell_list, manage_webshell_add, manage_webshell_update, manage_webshell_delete, manage_webshell_test, batch_task_list, batch_task_get, batch_task_start, batch_task_rerun, batch_task_pause, batch_task_update_metadata, batch_task_update_schedule, batch_task_schedule_enabled, batch_task_update_task, batch_task_remove_task, batch_task_delete, batch_task_create, batch_task_add_task, http-framework-test, exec] # Backend built-in always-resident tool whitelist (takes precedence over the always_visible count policy)
+    plantask_enable: true # P0: the main agent mounts the TaskCreate/Get/Update/List structured task board; requires eino_skills to be available and skills_dir to exist
+    plantask_rel_dir: .eino/plantask # Task files are relative to skills_dir, with a subdirectory per session: skills/.eino/plantask/<conversationId>/
+    reduction_enable: true # true: truncate large tool output and persist it to a local file (tmp/reduction/.../trunc/<id>), leaving only a <persisted-output> preview in the context; does not depend on eino_skills
+    reduction_max_length_for_trunc: 100000 # When a single tool result exceeds this many bytes: the full text is written to a local trunc file and a truncated preview with the path is returned (MCP/exec and reduction share this threshold)
+    reduction_max_tokens_for_clear: 60000 # Threshold (tokens) for clearing historical tool results; should be lower than max_total_tokens * summarization_trigger_ratio
+    reduction_root_dir: "" # Non-empty: root path where truncated/cleared content is persisted; empty: tmp/reduction under the project directory (isolated per session/project)
+    reduction_clear_exclude: [] # Extra list of tool names excluded from the "clear phase" (merged with built-in exclusions such as task/transfer/exit); fill in as a YAML list when needed
+    reduction_sub_agents: true # true: sub-agents also mount reduction; false: only the orchestrating main agent uses reduction
+    summarization_trigger_ratio: 0.8 # Trigger ratio for summarization (max_total_tokens * ratio), 0.75~0.85 recommended
+    summarization_output_reserve_tokens: 40960 # Tokens reserved for summarization model output; summarization input budget = trigger threshold - this value
+    summarization_emit_internal_events: true # true: emit summarization internal events (helps diagnostics)
+    summarization_user_intent_ledger_max_runes: 96000 # Total character cap of the "original user input and constraints ledger" injected into the model context after compression; original DB messages are not trimmed
+    summarization_user_intent_ledger_entry_max_runes: 16000 # Character cap of a single user message in the ledger; excess only trims the model-visible ledger and does not affect the DB original
+    latest_user_message_max_runes: 48000 # Character cap for the latest user message of this turn entering the model context; when exceeded the full text is persisted to disk and only a head/tail preview is injected
+    latest_user_message_head_runes: 24000 # Number of characters in the head preview of an oversized current-turn user message
+    latest_user_message_tail_runes: 24000 # Number of characters in the tail preview of an oversized current-turn user message
+    plan_execute_user_input_budget_ratio: 0.35 # Budget ratio for userInput in plan_execute (shared by planner/replanner/executor)
+    plan_execute_executed_steps_budget_ratio: 0.2 # Budget ratio for executed_steps in plan_execute
+    plan_execute_max_step_result_runes: 4000 # Maximum characters per step result in plan_execute (truncated beyond this)
+    plan_execute_keep_last_steps: 8 # plan_execute keeps the body of only the last N steps; earlier steps are folded into titles
+    checkpoint_dir: "" # The chat path no longer uses ADK checkpoints; cross-turn model state goes through conversations.last_react_*, which makes stale context easier to troubleshoot
+    model_retry_max_retries: 0 # Eino native ChatModel retry; 408/409/425/429/5xx/network jitter/empty streaming output are retried; 0 = default 4 (permanent 4xx are not retried)
+    model_retry_max_backoff_sec: 0 # Upper limit in seconds of a single backoff for Eino native ChatModel retry; 0 = default 30
+    model_failover_channels: [] # Eino native ChatModel failover; fill in ai.channels IDs, for example [qwen-plus]; switched in order after retries are exhausted
+    model_failover_max_retries: 0 # Maximum number of backup channels to try; 0 = try all of model_failover_channels
+    empty_response_continue_max_attempts: 0 # Number of backoff resume attempts by the Handler when a Run succeeds but no assistant body was captured (including stream interruption); 0 = default 5
+    deep_output_key: final_answer # P0: Eino session writes the final assistant conclusion (framework internal; Deep/Supervisor main / eino_single)
+    task_tool_description_prefix: "" # Non-empty: only Deep's task tool uses a custom description prefix, with the sub-agent name appended at run time; empty uses the Eino default generation logic
+  # Eino callbacks + OpenTelemetry: framework-level spans (aligned with Zap); eino_trace_* is not pushed to the end-user UI by default (see sse_trace_to_client)
+  eino_callbacks:
+    enabled: true
+    # log_only = Zap+OTel only (recommended default) | sse/full = also enable stream callback copies, closing, etc. (full includes stream hooks)
+    mode: log_only
+    sse_trace_to_client: false # true: and when mode is sse/full, push eino_trace_* to the frontend timeline (for troubleshooting / intranet demos)
+    max_input_summary_runes: 400
+    max_output_summary_runes: 400
+    zap_verbose: false # true: Debug logs include input/output summaries
+    otel:
+      enabled: true
+      service_name: veritysec
+      exporter: stdout # none | stdout (development/local) | otlphttp (production, connect to a Collector)
+      otlp_endpoint: localhost:4318 # Used with otlphttp, host:port, the path is fixed to /v1/traces
+      sample_ratio: 1.0 # 0~1, ParentBased+TraceIDRatio
+# Database configuration
+database:
+  path: data/conversations.db # SQLite database file path, used to store conversation history and messages
+  knowledge_db_path: data/knowledge.db # Knowledge base database file path (optional; if empty the conversation database is used), used to store knowledge items and vector embeddings; can be copied and reused independently
+# ============================================
+# Task Management Configuration
+# ============================================
+# (The settings are already included in the conversation-related configuration)
+
+# ============================================
+# Vulnerability Management Configuration
+# ============================================
+
+# Security tool configuration
+# The system loads all .yaml tool configuration files from this directory
+# Recommended: create a separate configuration file for each tool under the tools/ directory
+security:
+  secret_key: ${VERITYSEC_SECRET_KEY}
+  # auto: native Job Object on Windows; Unix watchdog unless cgroup_root is set.
+  # Linux production: configure a systemd service with Delegate=cpu memory pids; set
+  # mode: required, cgroup_root: auto. Explicit isolation errors fail closed.
+  process_isolation:
+    mode: auto
+    cgroup_root: ""
+    max_processes: 256
+    memory_max_bytes: 2147483648
+    cpu_quota_micros: 0 # 0=no CPU cap; 100000=one core (100 ms period)
+  tools_dir: tools # Tool configuration file directory (relative to the directory of the config file)
+  # Tool description mode: when loading tools under tools, the source of the description exposed to the AI/API
+  #   short - prefer short_description (brief description, saves tokens); use description when it is empty
+  #   full  - use description (detailed description)
+  tool_description_mode: full
+# ============================================
+# MCP Configuration
+# ============================================
+
+# MCP protocol configuration
+# MCP (Model Context Protocol) is used for tool registration and invocation
+mcp:
+  enabled: false # Whether to enable the MCP server (HTTP mode)
+  host: 127.0.0.1 # MCP server listen address; change it explicitly and configure network-level access control only when remote access is needed
+  port: 8081 # MCP server port
+  auth_header: "X-MCP-Token" # Optional global service credential header; for normal calls use the user Authorization: Bearer Token
+  auth_header_value: "" # Global service credential value, only effective when allow_global_access=true
+  allow_global_access: false # High-risk compatibility mode: a static key is mapped to a global service identity; by default use the user Bearer Token
+# External MCP configuration
+external_mcp:
+  servers: {}
+# Built-in C2: when you only use chat/knowledge base locally you can set this to false, so no listener is started and no C2 MCP tools are registered; enabled by default when this section is omitted
+c2:
+  enabled: false
+# ============================================
+# Knowledge Base Configuration
+# ============================================
+knowledge:
+  enabled: false # Whether to enable knowledge retrieval
+  base_path: knowledge_base # Knowledge base directory path (relative to the directory of the config file)
+  embedding:
+    provider: openai # Embedding model provider (currently only openai is supported)
+    model: text-embedding-v4 # Embedding model name
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1 # Leave empty to use the base_url from the OpenAI configuration
+    api_key: sk-xxxxxxx # Leave empty to use the api_key from the OpenAI configuration
+  retrieval:
+    top_k: 5 # Number of Top-K results returned by retrieval
+    similarity_threshold: 0.4 # Cosine similarity threshold (0-1); results below this value are filtered out
+    # Eino MultiQuery: an LLM rewrites the query, then multi-path vector retrieval is fused (always enabled)
+    multi_query:
+      max_queries: 4 # Upper limit of rewritten variants (including semantic coverage); 3~4 recommended
+    # Reranking (always enabled): dashscope uses gte-rerank; other OpenAI-compatible endpoints use /v1/rerank
+    rerank:
+      provider: "" # Empty = inferred from base_url: dashscope | cohere
+      model: "" # Empty = dashscope→gte-rerank, cohere→rerank-multilingual-v3.0
+      base_url: "" # Leave empty to use the base_url of embedding / openai
+      api_key: "" # Leave empty to use the api_key of embedding / openai
+    post_retrieve:
+      prefetch_top_k: 20 # Number of vector candidates per MultiQuery variant; 0 = built-in max(top_k*4,20)
+      max_context_chars: 0 # 0 = unlimited; otherwise the total Unicode character cap of the returned body (whole chunks)
+      max_context_tokens: 0 # 0 = unlimited; tiktoken total token cap
+    sub_index_filter: ""
+  # ============================================
+  # Indexing Configuration (to work around API limits)
+  # ============================================
+  indexing:
+    # Chunking configuration
+    chunk_size: 512 # Maximum tokens per chunk (default 512); long text is split into multiple chunks
+    chunk_overlap: 50 # Overlapping tokens between chunks (default 50), keeps context coherent
+    max_chunks_per_item: 0 # Maximum number of chunks per knowledge item (0 means unlimited), prevents a single file from consuming too much API quota
+    # Rate limiting configuration (addresses 429 errors)
+    max_rpm: 0 # Maximum requests per minute (default 0 means unlimited), e.g. OpenAI defaults to 200 RPM
+    rate_limit_delay_ms: 300 # Interval between requests in milliseconds (default 300), used to avoid API rate limits; set to 0 for no limit
+    # Suggested values: 200 requests/min ≈ 300ms, 100 requests/min ≈ 600ms
+
+    # Retry configuration
+    max_retries: 3 # Maximum retries (default 3); automatically retried on rate limits or server errors
+    retry_delay_ms: 1000 # Retry interval in milliseconds (default 1000); the delay increases with each retry
+    # Chunking strategy (Eino): markdown_then_recursive = split by Markdown headings first, then recursively; recursive = recursive split only. When left empty the program default is markdown_then_recursive
+    chunk_strategy: markdown_then_recursive
+    # Embedding HTTP request timeout (seconds). 0 means use the built-in default (usually 120), consistent with the embedding API client
+    request_timeout_seconds: 120
+    # true: when indexing, prefer the content of the disk file pointed to by the knowledge item's file_path (Eino FileLoader); false: use the body stored in the database. A disk read failure falls back to the DB
+    prefer_source_file: false
+    # Upper limit on the number of texts per embedding API request (index writes are batched by this). Must be <= the provider limit (e.g. some compatible endpoints allow at most 10); too large easily causes a 400
+    batch_size: 10
+    # Eino indexer.WithSubIndexes: list of logical partition labels, written to the vector table sub_indexes and filterable at retrieval with sub_index_filter; use [] if not needed
+    sub_indexes: []
+# ============================================
+# Bot Configuration (WeCom, DingTalk, Lark)
+# ============================================
+# Lets you chat with VeritySec from a phone via WeCom/DingTalk/Lark, usable even without deploying on a server
+# Configurable in System Settings -> Bot Settings
+robots:
+  wechat: # WeChat iLink (personal WeChat ClawBot, bind by scanning a QR code)
+    enabled: false
+    # Authentication defaults to user_binding; a dedicated bot can use service_account, and must restrict the real sender
+    auth:
+      mode: user_binding # user_binding | service_account
+      # service_user_id: "RBAC user ID of admin or a dedicated service account"
+      # allowed_external_users: ["t:tenant|u:sender"]
+    bot_token: ""
+    ilink_bot_id: ""
+    ilink_user_id: ""
+    base_url: https://ilinkai.weixin.qq.com
+    bot_type: "3"
+    bot_agent: VeritySec/1.0
+  wecom: # WeCom (WeChat Work)
+    enabled: false
+    auth:
+      mode: user_binding
+    token: ""
+    encoding_aes_key: ""
+    corp_id: ""
+    secret: ""
+    agent_id: 0
+  dingtalk: # DingTalk
+    enabled: false
+    auth:
+      mode: user_binding
+    client_id: ""
+    client_secret: ""
+    allow_conversation_id_fallback: false
+  lark: # Lark (Feishu)
+    enabled: false
+    auth:
+      mode: user_binding
+    app_id: ""
+    app_secret: ""
+    verify_token: ""
+    allow_chat_id_fallback: false
+  telegram: # Telegram
+    enabled: false
+    auth:
+      mode: user_binding
+    bot_token: ""
+    bot_username: ""
+    allow_group_messages: false
+  slack: # Slack
+    enabled: false
+    auth:
+      mode: user_binding
+    bot_token: ""
+    app_token: ""
+  discord: # Discord
+    enabled: false
+    auth:
+      mode: user_binding
+    bot_token: ""
+    allow_guild_messages: false
+  qq: # QQ bot
+    enabled: false
+    auth:
+      mode: user_binding
+    app_id: ""
+    client_secret: ""
+    sandbox: true
+# ============================================
+# Skills Configuration
+# ============================================
+
+# Skill package directory: each subdirectory contains only a standard SKILL.md (Agent Skills: front matter contains only name and description) + optional auxiliary files; no SKILL.yaml
+# Example: skills/veritysec-eino-demo/
+skills_dir: skills # Skills configuration directory (relative to the directory of the config file)
+# ============================================
+# Multi-agent Sub-Agents (Markdown, single place of maintenance)
+# ============================================
+# Each .md: YAML front matter (name / id / description / tools / bind_role / optional max_iterations>0 to override the global value / optional kind: orchestrator) + body is the system prompt
+# Main agent: fixed file name orchestrator.md, or any file name + front matter kind: orchestrator (only one allowed in the whole directory); the main agent does not take part in the task sub-agent list
+# Advanced usage: sub_agents can still be written inside the multi_agent block; they are merged with this directory, and on the same id the YAML can be overridden by the .md
+agents_dir: agents
+# ============================================
+# Role Configuration
+# ============================================
+
+# The system loads all .yaml role configuration files from this directory
+# Each role should have its own configuration file, for example: roles/CTF.yaml, roles/default.yaml, etc.
+roles_dir: roles # Role configuration file directory (relative to the directory of the config file)
+# ============================================
+# Project Management and Fact Blackboard
+# ============================================
+project:
+  enabled: true
+  # During compression, automatically save a resume summary as a tentative note (one updated per session/agent; does not replace confirmed facts)
+  context_checkpoints: true
+  # default_project_id: "" # Optional: default project ID used when bots/batch tasks create conversations
+  # The project-resume supplement is included in the fact index budget; the working-file candidate list has its own budget of at most 4000 characters
+  fact_index_max_runes: 65000
+  # Budget for the fact relationship overview section (reserved from the total index budget)
+  fact_index_path_max_runes: 10000
+  fact_summary_max_runes: 24000
+  default_inject_deprecated: false
+
+# ============================================
+# One-click Update (optional)
+# ============================================
+# Update source: a single repository URL; updates follow that repository's own default branch; when not configured it is the official repository
+# (https://github.com/AIPentest/VeritySec.git). If GitHub access is poor you can enter a mirror URL here,
+# and to follow your own fork you also only change this one place; it can also be entered and saved directly on the console "System Settings -> One-click Update" page.
+# Non-git directories (extracted/packaged installs) need no configuration, and can run "Connect update source" on the console "One-click Update" page,
+# which turns the directory into a git working tree tracking that repository, after which one-click update works like a normal install.
+# update:
+#   repo: https://github.com/AIPentest/VeritySec.git  # A single repository URL; empty/omitted = official repository
+
+# Email notifications (Resend). Sends welcome emails when creating users.
+# Get an API key at https://resend.com and set RESEND_API_KEY in .env
+# email:
+#   resend_api_key: ${RESEND_API_KEY}
+#   from_address: ${RESEND_FROM_ADDRESS:-noreply@veritysec.app}
+#   app_url: ${VERITYSEC_APP_URL}

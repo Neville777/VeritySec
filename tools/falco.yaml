@@ -1,0 +1,60 @@
+name: "falco"
+command: "falco"
+enabled: true
+short_description: "Runtime security monitoring tool"
+description: |
+  Falco is a runtime security monitoring tool used to detect abnormal behavior in containers and hosts.
+
+  **Main features:**
+  - Runtime monitoring
+  - Anomaly detection
+  - Rules engine
+  - Real-time alerts
+
+  **Use cases:**
+  - Runtime security monitoring
+  - Anomaly detection
+  - Security incident response
+  - Compliance monitoring
+parameters:
+  - name: "config_file"
+    type: "string"
+    description: "Falco configuration file"
+    required: false
+    flag: "--config"
+    format: "flag"
+    default: "/etc/falco/falco.yaml"
+  - name: "rules_file"
+    type: "string"
+    description: "Custom rules file"
+    required: false
+    flag: "--rules"
+    format: "flag"
+  - name: "json_output"
+    type: "bool"
+    description: "Output in JSON format (equivalent to -o json_output=true)"
+    required: false
+    flag: "-o json_output=true"
+    format: "flag"
+    default: true
+  - name: "duration"
+    type: "int"
+    description: "Monitoring duration (seconds)"
+    required: false
+    flag: "--duration"
+    format: "flag"
+    default: 60
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional falco arguments. Used to pass falco options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

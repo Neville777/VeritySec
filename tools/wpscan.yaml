@@ -1,0 +1,33 @@
+name: "wpscan"
+command: "wpscan"
+enabled: true
+# Allowed exit codes: wpscan returns exit code 4 when the target is not a WordPress site; this is normal informational output
+allowed_exit_codes: [4]
+short_description: "WordPress security scanner for detecting WordPress vulnerabilities"
+description: |
+  WPScan is a tool dedicated to WordPress security scanning; it can detect vulnerabilities in themes, plugins, and core.
+
+  **Key features:**
+  - WordPress core vulnerability detection
+  - Theme and plugin vulnerability scanning
+  - User enumeration
+  - Password brute forcing
+  - Security configuration checks
+
+  **Use cases:**
+  - WordPress security assessment
+  - Vulnerability scanning
+  - Penetration testing
+  - Security auditing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "WordPress site URL"
+    required: true
+    flag: "--url"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional WPScan arguments"
+    required: false
+    format: "positional"

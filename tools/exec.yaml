@@ -1,0 +1,110 @@
+name: "exec"
+command: "sh"
+args: ["-c"]
+enabled: true
+# Short description (used in the tool list to reduce token consumption)
+short_description: "System command execution tool for running shell commands and system operations (use with caution)"
+# Detailed tool description
+description: |
+  System command execution tool for running shell commands and system operations.
+
+  **Main features:**
+  - Execute arbitrary shell commands
+  - Supports bash, sh, and other shells
+  - Can specify a working directory
+  - Returns command execution results
+
+  **Use cases:**
+  - System administration and maintenance
+  - Automated script execution
+  - File operations and processing
+  - System information gathering
+
+  **Security warnings:**
+  - ⚠️ This tool can execute arbitrary system commands and carries security risks
+  - ⚠️ Use only in controlled environments
+  - ⚠️ All command executions are logged
+  - ⚠️ It is recommended to restrict the range of executable commands
+  - ⚠️ Do not execute untrusted commands
+# Parameter definitions
+parameters:
+  - name: "command"
+    type: "string"
+    description: |
+      System command to execute. Can be any valid shell command.
+
+      **Format requirements:**
+      - A complete shell command
+      - May include shell features such as pipes and redirection
+      - Environment variables are supported
+
+      **Example values:**
+      - Simple command: "ls -la"
+      - With pipe: "ps aux | grep nginx"
+      - File operation: "cat /etc/passwd"
+      - Network command: "curl http://example.com"
+      - System information: "uname -a"
+      - Find files: "find /var/log -name '*.log'"
+
+      **Notes:**
+      - The command is executed in the specified shell
+      - Make sure the command syntax is correct
+      - Be mindful of the security impact of the command
+      - Required parameter; cannot be empty
+    required: true
+    position: 0
+    format: "positional"
+  - name: "shell"
+    type: "string"
+    description: |
+      Shell type to use. Defaults to sh.
+
+      **Available values:**
+      - sh: standard shell (default)
+      - bash: Bash shell
+      - zsh: Z shell
+      - Other shells available on the system
+
+      **Example values:**
+      - "sh" (default)
+      - "bash"
+      - "zsh"
+
+      **Notes:**
+      - Make sure the specified shell is available on the system
+      - Command syntax may differ slightly between shells
+    required: false
+    default: "sh"
+  - name: "workdir"
+    type: "string"
+    description: |
+      Working directory in which to execute the command. If not specified, the current working directory is used.
+
+      **Format requirements:**
+      - Absolute or relative path
+      - The directory must exist
+
+      **Example values:**
+      - "/tmp"
+      - "/var/log"
+      - "./data"
+      - "/home/user/project"
+
+      **Notes:**
+      - Make sure the directory exists and is accessible
+      - Relative paths are relative to the program's running directory
+    required: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional exec arguments. Used to pass exec options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

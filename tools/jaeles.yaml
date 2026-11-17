@@ -1,0 +1,66 @@
+name: "jaeles"
+command: "jaeles"
+args: ["scan"]
+enabled: true
+short_description: "Advanced vulnerability scanner with custom signature support"
+description: |
+  Jaeles is an advanced vulnerability scanner that supports custom signatures for vulnerability detection.
+
+  **Main features:**
+  - Custom signature support
+  - Multiple vulnerability detection
+  - Fast scanning
+  - Detailed reports
+
+  **Use cases:**
+  - Vulnerability scanning
+  - Web application security testing
+  - Custom detection rules
+  - Security testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "signatures"
+    type: "string"
+    description: "Custom signature path"
+    required: false
+    flag: "-s"
+    format: "flag"
+  - name: "config"
+    type: "string"
+    description: "Configuration file"
+    required: false
+    flag: "-c"
+    format: "flag"
+  - name: "threads"
+    type: "int"
+    description: "Number of threads"
+    required: false
+    flag: "-t"
+    format: "flag"
+    default: 20
+  - name: "timeout"
+    type: "int"
+    description: "Request timeout (seconds)"
+    required: false
+    flag: "--timeout"
+    format: "flag"
+    default: 20
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional jaeles arguments. Used to pass jaeles options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

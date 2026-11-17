@@ -1,0 +1,61 @@
+name: "netexec"
+command: "netexec"
+enabled: true
+short_description: "Network enumeration and exploitation framework (formerly CrackMapExec)"
+description: |
+  NetExec (formerly CrackMapExec) is a network enumeration and exploitation framework supporting multiple protocols.
+
+  **Key features:**
+  - Multi-protocol support (SMB, SSH, WinRM, etc.)
+  - Credential validation
+  - Lateral movement
+  - Modular architecture
+
+  **Use cases:**
+  - Network penetration testing
+  - Domain environment testing
+  - Lateral movement testing
+  - Credential validation
+parameters:
+  - name: "protocol"
+    type: "string"
+    description: "Protocol type (smb, ssh, winrm, etc.)"
+    required: false
+    default: "smb"
+    position: 0
+    format: "positional"
+  - name: "target"
+    type: "string"
+    description: "Target IP or network"
+    required: true
+    position: 1
+    format: "positional"
+  - name: "username"
+    type: "string"
+    description: "Username"
+    required: false
+    flag: "-u"
+    format: "flag"
+  - name: "password"
+    type: "string"
+    description: "Password"
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "hash_value"
+    type: "string"
+    description: "NTLM hash (for Pass-the-Hash)"
+    required: false
+    flag: "-H"
+    format: "flag"
+  - name: "module"
+    type: "string"
+    description: "Module to execute"
+    required: false
+    flag: "-M"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional NetExec arguments"
+    required: false
+    format: "positional"

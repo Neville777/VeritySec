@@ -1,0 +1,52 @@
+name: "xxd"
+command: "xxd"
+enabled: true
+short_description: "Hexadecimal dump tool"
+description: |
+  Xxd is a hexadecimal dump tool used to display file contents in hexadecimal format.
+
+  **Key features:**
+  - Hexadecimal dump
+  - Configurable offset and length
+  - Reverse conversion
+  - Multiple output formats
+
+  **Use cases:**
+  - Binary analysis
+  - File inspection
+  - Data extraction
+  - Forensic analysis
+parameters:
+  - name: "file_path"
+    type: "string"
+    description: "Path of the file to dump"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "offset"
+    type: "string"
+    description: "Offset at which to start reading"
+    required: false
+    flag: "-s"
+    format: "flag"
+    default: "0"
+  - name: "length"
+    type: "string"
+    description: "Number of bytes to read"
+    required: false
+    flag: "-l"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional xxd arguments. Used to pass xxd options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

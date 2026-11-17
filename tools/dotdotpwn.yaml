@@ -1,0 +1,46 @@
+name: "dotdotpwn"
+command: "dotdotpwn"
+enabled: true
+short_description: "Directory traversal vulnerability testing tool"
+description: |
+  DotDotPwn is a directory traversal vulnerability testing tool that supports multiple protocols.
+
+  **Main features:**
+  - Directory traversal testing
+  - Multi-protocol support (HTTP, FTP, TFTP, etc.)
+  - Automated testing
+  - Report generation
+
+  **Use cases:**
+  - Directory traversal vulnerability testing
+  - Web application security testing
+  - Penetration testing
+  - Vulnerability verification
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target hostname or IP"
+    required: true
+    flag: "-h"
+    format: "flag"
+  - name: "module"
+    type: "string"
+    description: "Module to use (http, ftp, tftp, etc.)"
+    required: false
+    flag: "-m"
+    format: "flag"
+    default: "http"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional dotdotpwn arguments. Used to pass dotdotpwn options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

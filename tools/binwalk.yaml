@@ -1,0 +1,46 @@
+name: "binwalk"
+command: "binwalk"
+enabled: true
+short_description: "Firmware and file analysis tool"
+description: |
+  Binwalk is a firmware analysis tool used to analyze, extract, and reverse engineer firmware images.
+
+  **Main features:**
+  - File signature identification
+  - File extraction
+  - Entropy analysis
+  - Firmware analysis
+
+  **Use cases:**
+  - Firmware analysis
+  - File format identification
+  - Data extraction
+  - Reverse engineering
+parameters:
+  - name: "file_path"
+    type: "string"
+    description: "Path to the file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "extract"
+    type: "bool"
+    description: "Extract discovered files"
+    required: false
+    flag: "-e"
+    format: "flag"
+    default: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional binwalk arguments. Used to pass binwalk options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

@@ -1,0 +1,79 @@
+name: "zap"
+command: "zap-cli"
+enabled: false
+short_description: "OWASP ZAP web application security scanner"
+description: |
+  OWASP ZAP is a web application security scanner used to find security vulnerabilities in web applications.
+
+  **Key features:**
+  - Web application security scanning
+  - Active and passive scanning
+  - API testing
+  - Detailed reports
+
+  **Use cases:**
+  - Web application security testing
+  - Vulnerability scanning
+  - Security assessment
+  - Penetration testing
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-t"
+    format: "flag"
+  - name: "scan_type"
+    type: "string"
+    description: "Scan type (baseline, full, api)"
+    required: false
+    flag: "--scan-type"
+    format: "flag"
+    default: "baseline"
+  - name: "api_key"
+    type: "string"
+    description: "ZAP API key"
+    required: false
+    flag: "--api-key"
+    format: "flag"
+  - name: "daemon"
+    type: "bool"
+    description: "Run in daemon mode"
+    required: false
+    flag: "--daemon"
+    format: "flag"
+    default: false
+  - name: "port"
+    type: "string"
+    description: "ZAP daemon port"
+    required: false
+    flag: "--port"
+    format: "flag"
+    default: "8090"
+  - name: "format_type"
+    type: "string"
+    description: "Output format (xml, json, html)"
+    required: false
+    flag: "--format"
+    format: "flag"
+    default: "xml"
+  - name: "output_file"
+    type: "string"
+    description: "Output file path"
+    required: false
+    flag: "--output"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional zap arguments. Used to pass zap options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

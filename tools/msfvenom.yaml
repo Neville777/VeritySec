@@ -1,0 +1,63 @@
+name: "msfvenom"
+command: "msfvenom"
+enabled: true
+short_description: "Metasploit payload generation tool"
+description: |
+  MSFVenom is the payload generation tool of the Metasploit framework, used to create various types of attack payloads.
+
+  **Main features:**
+  - Many payload types
+  - Encoder support
+  - Multiple output formats
+  - Platform support
+
+  **Use cases:**
+  - Penetration testing
+  - Payload generation
+  - Exploit development
+  - Security testing
+parameters:
+  - name: "payload"
+    type: "string"
+    description: "Payload to generate (e.g. windows/meterpreter/reverse_tcp)"
+    required: true
+    flag: "-p"
+    format: "flag"
+  - name: "format_type"
+    type: "string"
+    description: "Output format (exe, elf, raw, etc.)"
+    required: false
+    flag: "-f"
+    format: "flag"
+  - name: "output_file"
+    type: "string"
+    description: "Output file path"
+    required: false
+    flag: "-o"
+    format: "flag"
+  - name: "encoder"
+    type: "string"
+    description: "Encoder (e.g. x86/shikata_ga_nai)"
+    required: false
+    flag: "-e"
+    format: "flag"
+  - name: "iterations"
+    type: "string"
+    description: "Number of encoding iterations"
+    required: false
+    flag: "-i"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional msfvenom arguments. Used to pass msfvenom options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

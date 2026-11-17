@@ -1,0 +1,59 @@
+name: "checkov"
+command: "checkov"
+enabled: true
+short_description: "Infrastructure as Code security scanning tool"
+description: |
+  Checkov is a static code analysis tool for security scanning of Infrastructure as Code (IaC).
+
+  **Main features:**
+  - Supports multiple IaC frameworks (Terraform, CloudFormation, Kubernetes, etc.)
+  - Hundreds of built-in policies
+  - Custom policy support
+  - CI/CD integration
+
+  **Use cases:**
+  - IaC security scanning
+  - Cloud configuration auditing
+  - Security policy checks
+  - Compliance checks
+parameters:
+  - name: "directory"
+    type: "string"
+    description: "Directory to scan"
+    required: false
+    flag: "-d"
+    format: "flag"
+    default: "."
+  - name: "framework"
+    type: "string"
+    description: "Framework to scan (terraform, cloudformation, kubernetes, etc.)"
+    required: false
+    flag: "--framework"
+    format: "flag"
+  - name: "check"
+    type: "string"
+    description: "Specific check to run"
+    required: false
+    flag: "--check"
+    format: "flag"
+  - name: "output_format"
+    type: "string"
+    description: "Output format (json, yaml, cli)"
+    required: false
+    flag: "--output"
+    format: "flag"
+    default: "json"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional checkov arguments. Used to pass checkov options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

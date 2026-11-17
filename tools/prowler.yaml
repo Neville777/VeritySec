@@ -1,0 +1,66 @@
+name: "prowler"
+command: "prowler"
+enabled: true
+short_description: "Cloud security assessment tool (AWS, Azure, GCP)"
+description: |
+  Prowler is a comprehensive cloud security assessment tool supporting AWS, Azure, and GCP.
+
+  **Key features:**
+  - Cloud security assessment
+  - Compliance checks
+  - Security best practice checks
+  - Multiple output formats
+
+  **Use cases:**
+  - Cloud security auditing
+  - Compliance checks
+  - Security assessment
+  - Cloud configuration auditing
+parameters:
+  - name: "provider"
+    type: "string"
+    description: "Cloud provider (aws, azure, gcp)"
+    required: false
+    default: "aws"
+    position: 0
+    format: "positional"
+  - name: "profile"
+    type: "string"
+    description: "AWS profile"
+    required: false
+    flag: "-p"
+    format: "flag"
+    default: "default"
+  - name: "region"
+    type: "string"
+    description: "Specific region to scan"
+    required: false
+    flag: "-r"
+    format: "flag"
+  - name: "checks"
+    type: "string"
+    description: "Specific checks to run"
+    required: false
+    flag: "-c"
+    format: "flag"
+  - name: "output_format"
+    type: "string"
+    description: "Output format (json, csv, html)"
+    required: false
+    flag: "-M"
+    format: "flag"
+    default: "json"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional prowler arguments. Used to pass prowler options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

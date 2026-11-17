@@ -1,0 +1,18 @@
+//go:build windows
+
+package main
+
+import (
+	"os/exec"
+	"syscall"
+)
+
+// prepareHiddenCmd prevents child processes from popping up a console window (cmd / powershell / temporary exe, etc.).
+func prepareHiddenCmd(cmd *exec.Cmd) {
+	if cmd == nil {
+		return
+	}
+	// Use HideWindow only: equivalent to CREATE_NO_WINDOW, and when cross-compiling Windows on macOS/Linux
+	// the syscall.CREATE_NO_WINDOW constant is unavailable.
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+}

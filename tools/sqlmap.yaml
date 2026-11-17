@@ -1,0 +1,142 @@
+name: "sqlmap"
+command: "sqlmap"
+enabled: true
+# Short description (used in the tool list to reduce token consumption)
+short_description: "Automated SQL injection detection and exploitation tool for finding and exploiting SQL injection vulnerabilities"
+# Detailed tool description
+description: |
+  Automated SQL injection detection and exploitation tool for finding and exploiting SQL injection vulnerabilities.
+
+  **Key features:**
+  - Automatically detects SQL injection vulnerabilities
+  - Supports multiple database types (MySQL, PostgreSQL, Oracle, MSSQL, etc.)
+  - Automatically extracts database information (tables, columns, data)
+  - Supports multiple injection techniques (boolean-based blind, time-based blind, UNION query, etc.)
+  - Supports advanced features such as file upload/download and command execution
+
+  **Use cases:**
+  - Web application security testing
+  - SQL injection vulnerability detection
+  - Database information gathering
+  - Penetration testing and vulnerability verification
+
+  **Notes:**
+  - Only use for authorized security testing
+  - Some operations may affect the target system
+  - It is recommended to verify in a test environment first
+  - Use the --batch parameter to avoid interactive prompts
+# Parameter definitions
+parameters:
+  - name: "url"
+    type: "string"
+    description: |
+      Target URL containing parameters that may be vulnerable to SQL injection.
+
+      **Format requirements:**
+      - A full URL including the protocol (http:// or https://)
+      - Must include query parameters; mark injection points with * in parameter values
+      - Or provide a full URL directly and sqlmap will detect parameters automatically
+
+      **Example values:**
+      - Marked injection point: "http://example.com/page?id=1*"
+      - Full URL: "http://example.com/page?id=1"
+      - POST data: "http://example.com/login" (requires the data parameter)
+      - Cookie injection: "http://example.com/page" (requires the cookie parameter)
+
+      **Notes:**
+      - The URL must be accessible
+      - Make sure the URL format is correct and includes the protocol prefix
+      - If using a POST request, the data parameter is required
+      - Required parameter, cannot be empty
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "batch"
+    type: "bool"
+    description: |
+      Non-interactive mode; automatically selects default options without requiring user input.
+
+      **Use cases:**
+      - Automated test scripts
+      - Batch scanning
+      - Avoiding interactive prompts
+
+      **Notes:**
+      - It is recommended to always set this to true to prevent the tool from waiting for user input
+      - Default value is true
+    required: false
+    default: true
+    flag: "--batch"
+    format: "flag"
+  - name: "level"
+    type: "int"
+    description: |
+      Test level, range 1-5. Higher levels are more thorough but take longer.
+
+      **Level descriptions:**
+      - Level 1: Basic testing; fast but may miss vulnerabilities
+      - Level 2: Default level; balances speed and coverage
+      - Level 3: Extended testing; more comprehensive detection
+      - Level 4: Deep testing; includes more payloads
+      - Level 5: Most comprehensive testing; includes all known techniques
+
+      **Recommendations:**
+      - Use 1-2 for quick scans
+      - Use 3 (default) for regular testing
+      - Use 4-5 for deep testing
+
+      **Notes:**
+      - Higher levels send more requests and may be blocked by a WAF
+      - Default value is 3
+    required: false
+    default: 3
+    flag: "--level"
+    format: "combined" # --level=3
+  - name: "data"
+    type: "string"
+    description: |
+      POST data string, used for SQL injection detection on POST requests.
+
+      **Format:**
+      - Form data format, e.g.: "username=admin&password=123"
+      - JSON format, e.g.: '{"username":"admin","password":"123"}'
+
+      **Notes:**
+      - If the URL uses the POST method, this parameter must be provided
+      - Mark injection points in parameter values with *
+    required: false
+    flag: "--data"
+    format: "flag"
+  - name: "cookie"
+    type: "string"
+    description: |
+      Cookie string, used for cookie injection detection.
+
+      **Format:**
+      - Standard cookie format, e.g.: "sessionid=abc123; user=admin"
+
+      **Notes:**
+      - Provide this parameter if cookie injection is present
+    required: false
+    flag: "--cookie"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional SQLMap arguments. Used to pass SQLMap options not defined in the parameter list.
+
+      **Example values:**
+      - "--dbs": list all databases
+      - "--tables -D database": list tables in the specified database
+      - "--dump -D database -T table": dump table data
+      - "--os-shell": obtain an operating system shell
+      - "--risk 2": risk level (1-3)
+      - "--threads 10": number of concurrent threads
+      - "--tamper space2comment": use a tamper script to bypass a WAF
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

@@ -1,0 +1,65 @@
+name: "x8"
+command: "x8"
+enabled: true
+short_description: "Hidden parameter discovery tool"
+description: |
+  X8 is a tool for discovering hidden parameters in web applications.
+
+  **Key features:**
+  - Hidden parameter discovery
+  - Multiple HTTP method support
+  - Custom wordlists
+  - Fast scanning
+
+  **Use cases:**
+  - Parameter discovery
+  - Web application security testing
+  - Bug bounty reconnaissance
+  - Security testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "--url"
+    format: "flag"
+  - name: "wordlist"
+    type: "string"
+    description: "Parameter wordlist"
+    required: false
+    flag: "--wordlist"
+    format: "flag"
+    default: "/usr/share/wordlists/x8/params.txt"
+  - name: "method"
+    type: "string"
+    description: "HTTP method"
+    required: false
+    flag: "--method"
+    format: "flag"
+    default: "GET"
+  - name: "body"
+    type: "string"
+    description: "Request body"
+    required: false
+    flag: "--body"
+    format: "flag"
+  - name: "headers"
+    type: "string"
+    description: "Custom request headers"
+    required: false
+    flag: "--headers"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional x8 arguments. Used to pass x8 options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

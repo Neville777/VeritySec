@@ -1,0 +1,45 @@
+name: "fierce"
+command: "fierce"
+enabled: true
+short_description: "DNS reconnaissance tool"
+description: |
+  Fierce is a DNS reconnaissance tool used to discover subdomains of a target domain.
+
+  **Main features:**
+  - Subdomain discovery
+  - DNS brute-forcing
+  - Zone transfer testing
+  - Network mapping
+
+  **Use cases:**
+  - DNS reconnaissance
+  - Subdomain enumeration
+  - Network mapping
+  - Penetration testing
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain name"
+    required: true
+    flag: "-dns"
+    format: "flag"
+  - name: "dns_server"
+    type: "string"
+    description: "DNS server to use"
+    required: false
+    flag: "-dnsserver"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional fierce arguments. Used to pass fierce options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

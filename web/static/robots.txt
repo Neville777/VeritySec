@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /landing
+Disallow: /app
+Disallow: /api/
+Disallow: /static/js/
+Disallow: /static/css/
+
+Sitemap: /sitemap.xml

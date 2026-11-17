@@ -1,0 +1,56 @@
+name: "zsteg"
+command: "zsteg"
+enabled: true
+short_description: "LSB steganography detection tool for detecting hidden data in PNG/BMP images"
+description: |
+  zsteg is a tool for detecting LSB (Least Significant Bit) steganography in PNG and BMP images.
+
+  **Key features:**
+  - LSB steganography detection
+  - Support for multiple steganography algorithms
+  - Automatic extraction of hidden data
+  - Support for multiple image formats
+
+  **Use cases:**
+  - CTF steganography challenges
+  - Image steganography analysis
+  - Digital forensics
+  - Security research
+
+  **Notes:**
+  - Requires a Ruby environment
+  - Supports PNG and BMP formats
+  - Can detect multiple steganography algorithms
+parameters:
+  - name: "file"
+    type: "string"
+    description: "Path to the image file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "all"
+    type: "bool"
+    description: "Check all possible steganography methods"
+    required: false
+    flag: "--all"
+    format: "flag"
+  - name: "lsb"
+    type: "bool"
+    description: "Check LSB steganography only"
+    required: false
+    flag: "--lsb"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional zsteg arguments. Used to pass zsteg options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

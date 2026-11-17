@@ -1,0 +1,45 @@
+name: "jwt-analyzer"
+command: "jwt_tool"
+enabled: true
+short_description: "JWT token analysis and vulnerability testing tool"
+description: |
+  Advanced JWT token analysis and vulnerability testing tool for detecting security issues in JWT implementations.
+
+  **Main features:**
+  - JWT token analysis
+  - Vulnerability testing
+  - Attack vector detection
+  - Token manipulation
+
+  **Use cases:**
+  - JWT security testing
+  - Token analysis
+  - Vulnerability discovery
+  - Security testing
+parameters:
+  - name: "jwt_token"
+    type: "string"
+    description: "JWT token to analyze"
+    required: true
+    flag: "-t"
+    format: "flag"
+  - name: "target_url"
+    type: "string"
+    description: "Optional target URL for testing token manipulation"
+    required: false
+    flag: "-u"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional jwt-analyzer arguments. Used to pass jwt-analyzer options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

@@ -1,0 +1,58 @@
+name: "kube-bench"
+command: "kube-bench"
+enabled: true
+short_description: "CIS Kubernetes benchmark checking tool"
+description: |
+  Kube-bench is a CIS Kubernetes benchmark checking tool used to verify whether a Kubernetes cluster complies with the CIS benchmark.
+
+  **Main features:**
+  - CIS benchmark checks
+  - Multiple target support (master, node, etcd, policies)
+  - Detailed reports
+  - Configuration validation
+
+  **Use cases:**
+  - Kubernetes compliance checks
+  - Security configuration auditing
+  - CIS benchmark verification
+  - Security assessment
+parameters:
+  - name: "targets"
+    type: "string"
+    description: "Targets to check (master, node, etcd, policies)"
+    required: false
+    flag: "--targets"
+    format: "flag"
+  - name: "version"
+    type: "string"
+    description: "Kubernetes version"
+    required: false
+    flag: "--version"
+    format: "flag"
+  - name: "config_dir"
+    type: "string"
+    description: "Configuration directory"
+    required: false
+    flag: "--config-dir"
+    format: "flag"
+  - name: "output_format"
+    type: "string"
+    description: "Output format (json, yaml)"
+    required: false
+    flag: "--output"
+    format: "flag"
+    default: "json"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional kube-bench arguments. Used to pass kube-bench options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

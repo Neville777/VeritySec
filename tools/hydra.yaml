@@ -1,0 +1,95 @@
+name: "hydra"
+command: "hydra"
+args: ["-I"]
+enabled: true
+short_description: "Password brute-forcing tool supporting many protocols and services"
+description: |
+  Hydra is a network login password brute-forcing tool supporting protocols such as SSH, FTP, HTTP, and SMB.
+
+  **Calling conventions (must read):**
+  - A **username** must be provided: at least one of `username` (-l) or `username_file` (-L)
+  - A **password** must be provided: at least one of `password` (-p), `password_file` (-P), or `-C` (via `additional_args`)
+  - **Run a trial with a small wordlist first** (dozens to hundreds of entries); expand only after confirming the target is reachable. Do not default to huge wordlists such as rockyou
+  - Enabled by default: stop on first found (-f), 4 parallel tasks (-t), ignore restore (-I); for long-running tasks, set `output_file`
+
+  **CLI order:** `hydra [options] <target> <service>` (this tool assembles the arguments in this order; do not place the target before the options)
+
+  **Use cases:** weak password detection and password strength assessment in authorized environments
+
+  **Note:** Use only against authorized targets. For unresponsive targets, reduce `wait_time` or shrink the wordlist to avoid long hangs.
+parameters:
+  - name: "username"
+    type: "string"
+    description: "Single username (-l); at least one of this and username_file must be provided"
+    required: false
+    flag: "-l"
+    format: "flag"
+  - name: "username_file"
+    type: "string"
+    description: "Username wordlist file (-L)"
+    required: false
+    flag: "-L"
+    format: "flag"
+  - name: "password"
+    type: "string"
+    description: "Single password (-p)"
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "password_file"
+    type: "string"
+    description: "Password wordlist file (-P); prefer a small wordlist for trial runs"
+    required: false
+    flag: "-P"
+    format: "flag"
+  - name: "stop_on_first"
+    type: "bool"
+    description: "Exit immediately after finding one valid username/password pair (-f, default true)"
+    required: false
+    flag: "-f"
+    format: "flag"
+    default: true
+  - name: "tasks"
+    type: "int"
+    description: "Number of parallel connections per target (-t); 4 is recommended for SSH and similar services, default 4"
+    required: false
+    flag: "-t"
+    format: "flag"
+    default: 4
+  - name: "wait_time"
+    type: "int"
+    description: "Seconds to wait for a response per connection (-w), default 16 (lower than Hydra's default of 32, to reduce the feeling of hanging)"
+    required: false
+    flag: "-w"
+    format: "flag"
+    default: 16
+  - name: "wait_between"
+    type: "int"
+    description: "Seconds between connections per thread (-W), default 1"
+    required: false
+    flag: "-W"
+    format: "flag"
+    default: 1
+  - name: "output_file"
+    type: "string"
+    description: "Write results to a file (-o); recommended for long-running tasks"
+    required: false
+    flag: "-o"
+    format: "flag"
+  - name: "target"
+    type: "string"
+    description: "Target IP, hostname, or CIDR (must come after the options)"
+    required: true
+    position: 1
+    format: "positional"
+  - name: "service"
+    type: "string"
+    description: "Service type (ssh, ftp, http-get, http-post-form, smb, etc.; see hydra -h)"
+    required: true
+    position: 2
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: "Extra arguments (e.g. -s port, -S SSL, -m module options, -C login:pass file), appended to the end of the command"
+    required: false
+    format: "positional"

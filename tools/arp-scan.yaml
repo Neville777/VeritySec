@@ -1,0 +1,52 @@
+name: "arp-scan"
+command: "arp-scan"
+enabled: true
+short_description: "ARP network discovery tool"
+description: |
+  Arp-scan is an ARP network discovery tool used to find active hosts on the local network.
+
+  **Main features:**
+  - ARP scanning
+  - Local network discovery
+  - MAC address identification
+  - Fast scanning
+
+  **Use cases:**
+  - Local network discovery
+  - Host discovery
+  - Network mapping
+  - Penetration testing
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target IP range (if local_network is not used)"
+    required: false
+    position: 0
+    format: "positional"
+  - name: "interface"
+    type: "string"
+    description: "Network interface"
+    required: false
+    flag: "-I"
+    format: "flag"
+  - name: "local_network"
+    type: "bool"
+    description: "Scan the local network"
+    required: false
+    flag: "-l"
+    format: "flag"
+    default: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional arp-scan arguments. Used to pass arp-scan options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

@@ -1,0 +1,46 @@
+name: "objdump"
+command: "objdump"
+enabled: true
+short_description: "Binary file disassembly tool"
+description: |
+  Objdump is part of GNU binutils and is used to disassemble binary files.
+
+  **Key features:**
+  - Disassembly
+  - Symbol table display
+  - Section information display
+  - Multi-architecture support
+
+  **Use cases:**
+  - Binary analysis
+  - Reverse engineering
+  - Program understanding
+  - Debugging assistance
+parameters:
+  - name: "binary"
+    type: "string"
+    description: "Path to the binary file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "disassemble"
+    type: "bool"
+    description: "Disassemble the binary file"
+    required: false
+    flag: "-d"
+    format: "flag"
+    default: true
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional objdump arguments. Used to pass objdump options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

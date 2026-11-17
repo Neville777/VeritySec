@@ -1,0 +1,54 @@
+name: "gau"
+command: "gau"
+enabled: true
+short_description: "Fetch all known URLs from multiple data sources"
+description: |
+  Gau (Get All URLs) fetches all known URLs for a target domain from multiple data sources.
+
+  **Main features:**
+  - Fetch URLs from the Wayback Machine
+  - Fetch URLs from CommonCrawl
+  - Fetch URLs from OTX
+  - Fetch URLs from URLScan
+
+  **Use cases:**
+  - URL discovery
+  - Historical URL collection
+  - Bug bounty reconnaissance
+  - Security testing
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain name"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "providers"
+    type: "string"
+    description: "Data sources (wayback, commoncrawl, otx, urlscan)"
+    required: false
+    flag: "--providers"
+    format: "flag"
+  - name: "include_subs"
+    type: "bool"
+    description: "Include subdomains"
+    required: false
+    flag: "--subs"
+    format: "flag"
+    default: true
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional Gau arguments. Used to pass Gau options not defined in this parameter list.
+
+      **Example values:**
+      - "--o output.txt": write output to a file
+      - "--threads 4": number of threads
+      - "--blacklist ttf,woff,svg,png": blacklisted extensions
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

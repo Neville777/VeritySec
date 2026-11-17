@@ -1,0 +1,39 @@
+name: "ropgadget"
+command: "ROPgadget"
+enabled: true
+short_description: "ROP gadget search tool"
+description: |
+  ROPgadget is a tool for searching ROP gadgets in binary files.
+
+  **Key features:**
+  - ROP gadget search
+  - Multi-architecture support
+  - Gadget classification
+  - Exploit chain generation
+
+  **Use cases:**
+  - Binary analysis
+  - Exploit development
+  - ROP chain construction
+  - Security research
+parameters:
+  - name: "binary"
+    type: "string"
+    description: "Path to the binary file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional ropgadget arguments. Used to pass ropgadget options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

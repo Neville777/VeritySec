@@ -1,0 +1,299 @@
+name: "radare2"
+command: "r2"
+enabled: true
+short_description: "Binary analysis and reverse engineering framework supporting disassembly, debugging, and script-based analysis"
+description: |
+  Radare2 is a complete binary analysis and reverse engineering framework supporting many architectures and file formats.
+
+  **Key features:**
+  - Disassembly and decompilation: supports multiple architectures (x86, ARM, MIPS, etc.)
+  - Debugging support: local and remote debugging
+  - Scripting support: r2pipe scripts and r2 command scripts
+  - Multiple file formats: ELF, PE, Mach-O, firmware, etc.
+  - Interactive analysis: command-line interface and visual mode
+  - Automated analysis: batch analysis and scripted analysis
+
+  **Use cases:**
+  - Binary file analysis
+  - Reverse engineering and vulnerability research
+  - Malware analysis
+  - Reversing challenges in CTF competitions
+  - Firmware analysis
+  - Exploit development
+
+  **Notes:**
+  - The -c parameter can be used to execute commands and then exit (non-interactive mode)
+  - The -i parameter can be used to execute a script file
+  - The -q parameter can be used for silent mode (does not show startup information)
+  - The -A parameter can be used to automatically analyze the binary
+  - The -d parameter can be used to attach to a process for debugging
+parameters:
+  - name: "target"
+    type: "string"
+    description: |
+      Target file, process ID, or special value.
+
+      **Format:**
+      - File path: "/path/to/binary"
+      - Process ID: "1234" (requires the -d parameter)
+      - Special values: "-" (read from stdin), "--" (interactive mode), "=" (read from environment variable)
+
+      **Example values:**
+      - Binary file: "/tmp/vulnerable"
+      - Process debugging: "1234" (with -d)
+      - From stdin: "-"
+
+      **Notes:**
+      - Required parameter, cannot be empty
+      - If a process ID is specified, it must be used together with the -d parameter
+      - Note: radare2 requires the file path to be the last argument, so target uses position 1
+    required: true
+    position: 1
+    format: "positional"
+  - name: "commands"
+    type: "string"
+    description: |
+      Radare2 commands to execute. Can be a single command or multiple commands separated by semicolons.
+
+      **Format:**
+      - Single command: "aaa" (automatic analysis)
+      - Multiple commands: "aaa; pdf @main; VV" (analyze, disassemble main function, visual mode)
+
+      **Common commands:**
+      - "aaa": automatically analyze all functions
+      - "afl": list all functions
+      - "pdf @main": disassemble the main function
+      - "px 64": show 64 bytes in hexadecimal
+      - "VV": enter visual mode
+      - "i": show file information
+      - "iz": show strings
+
+      **Example values:**
+      - "aaa" (automatic analysis)
+      - "aaa; pdf @main" (analyze and disassemble the main function)
+      - "i; iz" (show information and strings)
+
+      **Notes:**
+      - Separate multiple commands with semicolons (;)
+      - The program exits after the commands finish (non-interactive mode)
+    required: false
+    flag: "-c"
+    format: "flag"
+  - name: "script_file"
+    type: "string"
+    description: |
+      Path to the script file to execute. The script file contains Radare2 commands, one per line.
+
+      **Format:**
+      - Script file path: "/path/to/script.r2"
+
+      **Example values:**
+      - "/tmp/analyze.r2"
+      - "./scripts/auto_analyze.r2"
+
+      **Notes:**
+      - Commands in the script file are executed in order
+      - The program exits after the script finishes
+    required: false
+    flag: "-i"
+    format: "flag"
+  - name: "arch"
+    type: "string"
+    description: |
+      Specify the target architecture.
+
+      **Common architectures:**
+      - "x86": 32-bit x86
+      - "x86_64": 64-bit x86
+      - "arm": ARM architecture
+      - "arm64": ARM64 architecture
+      - "mips": MIPS architecture
+      - "ppc": PowerPC architecture
+
+      **Example values:**
+      - "x86"
+      - "x86_64"
+      - "arm"
+      - "arm64"
+
+      **Notes:**
+      - If not specified, radare2 will attempt automatic detection
+      - Some architectures may require additional configuration
+    required: false
+    flag: "-a"
+    format: "flag"
+  - name: "bits"
+    type: "int"
+    description: |
+      Specify the target bit width (16, 32, 64).
+
+      **Example values:**
+      - 16 (16-bit)
+      - 32 (32-bit)
+      - 64 (64-bit)
+
+      **Notes:**
+      - Usually used together with the -a parameter
+      - If not specified, radare2 will attempt automatic detection
+    required: false
+    flag: "-b"
+    format: "flag"
+  - name: "auto_analyze"
+    type: "bool"
+    description: |
+      Automatically analyze the binary file. Equivalent to running the "aaa" command.
+
+      **Use cases:**
+      - Quick analysis of binary files
+      - Batch analysis
+
+      **Notes:**
+      - When enabled, all functions are analyzed automatically
+      - May take a long time
+    required: false
+    flag: "-A"
+    format: "flag"
+    default: false
+  - name: "debug"
+    type: "bool"
+    description: |
+      Debug mode. Can attach to a process or debug a file.
+
+      **Use cases:**
+      - Attaching to a running process
+      - Debugging binary files
+
+      **Notes:**
+      - Requires appropriate permissions
+      - If target is a process ID, this option must be enabled
+    required: false
+    flag: "-d"
+    format: "flag"
+    default: false
+  - name: "quiet"
+    type: "bool"
+    description: |
+      Silent mode. Does not display startup information or prompts.
+
+      **Use cases:**
+      - Scripted usage
+      - Batch analysis
+      - Automated tool invocation
+
+      **Notes:**
+      - Suitable for non-interactive use
+      - Reduces output noise
+    required: false
+    flag: "-q"
+    format: "flag"
+    default: false
+  - name: "seek"
+    type: "string"
+    description: |
+      Set the starting address. Can be a hexadecimal address or an expression.
+
+      **Format:**
+      - Hexadecimal: "0x400000"
+      - Expression: "main+0x10"
+
+      **Example values:**
+      - "0x400000"
+      - "main"
+      - "0x1000"
+
+      **Notes:**
+      - The address can be hexadecimal or a symbol name
+      - Used to start analysis from a specific location
+    required: false
+    flag: "-s"
+    format: "flag"
+  - name: "base_address"
+    type: "string"
+    description: |
+      Set the base address. Used as the load address.
+
+      **Format:**
+      - Hexadecimal address: "0x400000"
+
+      **Example values:**
+      - "0x400000"
+      - "0x1000000"
+
+      **Notes:**
+      - Used to specify the load address of the binary file
+      - Commonly used when analyzing firmware or memory dumps
+    required: false
+    flag: "-B"
+    format: "flag"
+  - name: "eval"
+    type: "string"
+    description: |
+      Set configuration variables. Format is key=value.
+
+      **Format:**
+      - "key=value"
+      - Separate multiple variables with spaces: "asm.arch=x86 asm.bits=32"
+
+      **Example values:**
+      - "asm.arch=x86"
+      - "asm.bits=32"
+      - "scr.color=false"
+
+      **Notes:**
+      - Used to set radare2 configuration variables
+      - Separate multiple variables with spaces
+    required: false
+    flag: "-e"
+    format: "flag"
+  - name: "project"
+    type: "string"
+    description: |
+      Load or save a project file.
+
+      **Format:**
+      - Project file path: "/path/to/project.r2"
+
+      **Example values:**
+      - "./project.r2"
+      - "/tmp/analysis.r2"
+
+      **Notes:**
+      - Project files save analysis state and configuration
+      - Can be used to resume a previous analysis
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional radare2 arguments. Used to pass radare2 options not defined in the parameter list.
+
+      **Available options:**
+      - "-C": force color output
+      - "-f": force opening the file (even if the format does not match)
+      - "-L": list supported plugins
+      - "-M": enable write mode
+      - "-n": do not load the configuration file
+      - "-N": do not execute scripts
+      - "-S": start in debug mode
+      - "-t": use thread mode
+      - "-u": use the unicorn engine
+      - "-v": show version information
+      - "-w": write mode
+      - "-z": scan strings
+      - "-X": execute an r2pipe script
+      - "-P patch": apply a patch
+      - "-m maddr": map address
+
+      **Example values:**
+      - "-w" (write mode)
+      - "-n" (do not load the configuration file)
+      - "-M" (enable write mode)
+      - "-z" (scan strings)
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

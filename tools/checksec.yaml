@@ -1,0 +1,39 @@
+name: "checksec"
+command: "checksec"
+enabled: true
+short_description: "Binary security feature checking tool"
+description: |
+  Checksec is a tool for checking the security features of binary files.
+
+  **Main features:**
+  - Security feature checks
+  - Protection mechanism detection
+  - Multi-architecture support
+  - Detailed reports
+
+  **Use cases:**
+  - Binary security analysis
+  - Protection mechanism checks
+  - Vulnerability research
+  - Security assessment
+parameters:
+  - name: "binary"
+    type: "string"
+    description: "Path to the binary file to check"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional checksec arguments. Used to pass checksec options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

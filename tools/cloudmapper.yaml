@@ -1,0 +1,53 @@
+name: "cloudmapper"
+command: "cloudmapper"
+enabled: true
+short_description: "AWS network visualization and security analysis tool"
+description: |
+  CloudMapper is an AWS network visualization and security analysis tool.
+
+  **Main features:**
+  - AWS network visualization
+  - Security analysis
+  - Network mapping
+  - Admin discovery
+
+  **Use cases:**
+  - AWS network analysis
+  - Security assessment
+  - Network visualization
+  - Security auditing
+parameters:
+  - name: "action"
+    type: "string"
+    description: "Action to perform (collect, prepare, webserver, find_admins, etc.)"
+    required: false
+    default: "collect"
+    position: 0
+    format: "positional"
+  - name: "account"
+    type: "string"
+    description: "AWS account to analyze"
+    required: false
+    flag: "--account"
+    format: "flag"
+  - name: "config"
+    type: "string"
+    description: "Configuration file path"
+    required: false
+    flag: "--config"
+    format: "flag"
+    default: "config.json"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional cloudmapper arguments. Used to pass cloudmapper options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

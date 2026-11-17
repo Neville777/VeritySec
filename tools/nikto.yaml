@@ -1,0 +1,70 @@
+name: "nikto"
+command: "nikto"
+enabled: true
+# Allowed exit codes: nikto returns exit code 1 when it finds vulnerabilities, which is a normal success state
+allowed_exit_codes: [1]
+# Short description (used in the tool list to reduce token consumption)
+short_description: "Web server scanner that detects known vulnerabilities and misconfigurations in web servers and applications"
+# Detailed tool description
+description: |
+  Web server scanner that detects known vulnerabilities, misconfigurations, and potential security issues in web servers and applications.
+
+  **Key features:**
+  - Detects web server version and configuration issues
+  - Identifies known web vulnerabilities and CVEs
+  - Detects dangerous files and directories
+  - Checks for server misconfigurations
+  - Identifies outdated software versions
+  - Detects default files and scripts
+
+  **Use cases:**
+  - Web application security assessment
+  - Server configuration auditing
+  - Vulnerability scanning and discovery
+  - Early-stage information gathering for penetration tests
+
+  **Notes:**
+  - Scans may generate large logs; manage log output accordingly
+  - Some scans may trigger WAF or IDS alerts
+  - Use only within authorized scope
+  - Scan results require manual verification
+# Parameter definitions
+parameters:
+  - name: "target"
+    type: "string"
+    description: |
+      Target URL or IP address. Can be a full URL or an IP address.
+
+      **Format requirements:**
+      - May include a protocol (http:// or https://)
+      - May be just an IP address or domain name
+      - If only an IP is provided, the http protocol is used by default
+
+      **Example values:**
+      - Full URL: "http://example.com"
+      - HTTPS: "https://example.com"
+      - IP address: "192.168.1.1"
+      - With port: "http://example.com:8080"
+      - With path: "http://example.com/admin"
+
+      **Notes:**
+      - If only an IP is provided, the tool uses the http protocol
+      - Providing a full URL is recommended to ensure correct scanning
+      - Required parameter, cannot be empty
+    required: true
+    flag: "-h"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional nikto arguments. Used to pass nikto options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

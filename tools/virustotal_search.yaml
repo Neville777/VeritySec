@@ -1,0 +1,91 @@
+name: "virustotal_search"
+command: "python3"
+args:
+  - "-c"
+  - "import sys\nimport json\nimport requests\nimport os\nimport time\n\n# ==================== VirusTotal configuration ====================\n# Enter your VirusTotal API key here\n# You can also set it via the environment variable: VT_API_KEY\n# enable defaults to false; it must be enabled before this MCP can be called\nVT_API_KEY = \"\"  # Enter your VirusTotal API key here\n# =======================================================\n\n# VirusTotal API base URL\nBASE_URL = \"https://www.virustotal.com/api/v3\"\n\ndef parse_args():\n    \"\"\"Parse command-line arguments\"\"\"\n    # Try to read the JSON config from the first argument\n    if len(sys.argv) > 1:\n        try:\n            arg1 = str(sys.argv[1])\n            config = json.loads(arg1)\n            if isinstance(config, dict):\n                return config\n        except (json.JSONDecodeError, TypeError, ValueError):\n            pass\n\n    # Legacy positional argument mode\n    config = {}\n    if len(sys.argv) > 1:\n        config['domain'] = str(sys.argv[1])\n    if len(sys.argv) > 2:\n        try:\n            config['limit'] = int(sys.argv[2])\n        except (ValueError, TypeError):\n            pass\n    if len(sys.argv) > 3:\n        config['include_ips'] = sys.argv[3].lower() in ('true', '1', 'yes')\n    return config\n\ndef query_virustotal_subdomains(domain, api_key, limit=100, include_ips=False):\n    \"\"\"\n    Query VirusTotal for subdomain information\n    \n    Args:\n        domain: Domain to query\n        api_key: VirusTotal API key\n        limit: Maximum number of results to return\n        include_ips: Whether to include IP address information\n    \n    Returns:\n        dict: dict containing the query results\n    \"\"\"\n    # Build the API request URL\n    url = f\"{BASE_URL}/domains/{domain}/subdomains\"\n    \n    headers = {\n        \"x-apikey\": api_key,\n        \"accept\": \"application/json\"\n    }\n    \n    params = {\n        \"limit\": min(limit, 40)  # API limit is at most 40\n    }\n    \n    all_results = []\n    next_url = None\n    \n    try:\n        # Handle pagination\n        while True:\n            if next_url:\n                response = requests.get(next_url, headers=headers, timeout=30)\n            else:\n                response = requests.get(url, headers=headers, params=params, timeout=30)\n            \n            response.raise_for_status()\n            data = response.json()\n            \n            # Extract subdomain data\n            if 'data' in data and data['data']:\n                for item in data['data']:\n                    if 'id' in item:\n                        subdomain_info = {\n                            'subdomain': item['id'],\n                            'type': item.get('type', 'domain'),\n                        }\n                        \n                        # If include_ips is True, try to get resolved IPs\n                        if include_ips and 'attributes' in item:\n                            attributes = item.get('attributes', {})\n                            # Simplified here; may require additional API calls in practice\n                            subdomain_info['last_dns_records'] = attributes.get('last_dns_records', [])\n                        \n                        all_results.append(subdomain_info)\n                \n                # Check whether there is a next page\n                if 'links' in data and 'next' in data['links'] and len(all_results) < limit:\n                    next_url = data['links']['next']\n                    # Avoid sending requests too quickly\n                    time.sleep(0.5)\n                else:\n                    break\n            else:\n                break\n            \n            # Stop fetching if the limit has been reached\n            if len(all_results) >= limit:\n                break\n        \n        # Process the results\n        if all_results:\n            return {\n                \"status\": \"success\",\n                \"domain\": domain,\n                \"total_found\": len(all_results),\n                \"results\": all_results[:limit],\n                \"message\": f\"Successfully retrieved {len(all_results[:limit])} subdomains\"\n            }\n        else:\n            return {\n                \"status\": \"success\",\n                \"domain\": domain,\n                \"total_found\": 0,\n                \"results\": [],\n                \"message\": f\"No subdomains found for {domain}\"\n            }\n            \n    except requests.exceptions.RequestException as e:\n        error_msg = str(e)\n        error_result = {\n            \"status\": \"error\",\n            \"message\": f\"API request failed: {error_msg}\",\n            \"suggestion\": \"Please check the network connection and whether the API key is correct, or whether the VirusTotal API service is available\"\n        }\n        \n        # Handle specific HTTP status codes\n        if hasattr(e, 'response') and e.response:\n            status_code = e.response.status_code\n            if status_code == 401:\n                error_result[\"message\"] = \"Invalid or unauthorized API key\"\n                error_result[\"suggestion\"] = \"Please check that the VirusTotal API key is correct, or obtain a valid key at https://www.virustotal.com/\"\n            elif status_code == 429:\n                error_result[\"message\"] = \"API request rate limit exceeded\"\n                error_result[\"suggestion\"] = \"Please try again later. The VirusTotal API has strict rate limits (4 requests per minute on the free plan)\"\n            elif status_code == 404:\n                error_result[\"message\"] = f\"Domain '{domain}' does not exist or was not found\"\n        \n        return error_result\n\ntry:\n    config = parse_args()\n    \n    if not isinstance(config, dict):\n        error_result = {\n            \"status\": \"error\",\n            \"message\": f\"Argument parsing error: expected a dict, but got {type(config).__name__}\",\n            \"type\": \"TypeError\"\n        }\n        print(json.dumps(error_result, ensure_ascii=False, indent=2))\n        sys.exit(1)\n    \n    # Get the API key (from config or environment variable)\n    api_key = os.getenv('VT_API_KEY', VT_API_KEY).strip()\n    \n    if not api_key:\n        error_result = {\n            \"status\": \"error\",\n            \"message\": \"Missing VirusTotal API key\",\n            \"required_config\": [\"VT_API_KEY\"],\n            \"note\": \"Please enter your VirusTotal API key in the VT_API_KEY setting of the YAML file, or set it in the VT_API_KEY environment variable. API keys can be registered for at https://www.virustotal.com/\"\n        }\n        print(json.dumps(error_result, ensure_ascii=False, indent=2))\n        sys.exit(1)\n    \n    # Get required parameters\n    domain = config.get('domain', '').strip()\n    if not domain:\n        error_result = {\n            \"status\": \"error\",\n            \"message\": \"Missing required parameter: domain (the domain to query)\",\n            \"required_params\": [\"domain\"],\n            \"examples\": [\n                \"example.com\",\n                \"google.com\",\n                \"baidu.com\"\n            ]\n        }\n        print(json.dumps(error_result, ensure_ascii=False, indent=2))\n        sys.exit(1)\n    \n    # Get optional parameters\n    limit = config.get('limit', 100)\n    try:\n        limit = int(limit)\n        if limit < 1:\n            limit = 100\n        elif limit > 1000:\n            limit = 1000  # Cap at 1000\n    except (ValueError, TypeError):\n        limit = 100\n    \n    include_ips = config.get('include_ips', False)\n    if isinstance(include_ips, str):\n        include_ips = include_ips.lower() in ('true', '1', 'yes')\n    \n    # Run the query\n    result = query_virustotal_subdomains(domain, api_key, limit, include_ips)\n    \n    # Output the result\n    print(json.dumps(result, ensure_ascii=False, indent=2))\n    \nexcept Exception as e:\n    error_result = {\n        \"status\": \"error\",\n        \"message\": f\"Execution error: {str(e)}\",\n        \"type\": type(e).__name__\n    }\n    print(json.dumps(error_result, ensure_ascii=False, indent=2))\n    sys.exit(1)\n"
+enabled: false
+short_description: "VirusTotal subdomain lookup tool that passively collects subdomains via the VirusTotal API"
+description: |
+  VirusTotal subdomain lookup tool that uses the historical DNS data aggregated by VirusTotal to discover subdomains of a target domain.
+
+  **Key features:**
+  - Passive subdomain collection: retrieves subdomains from VirusTotal historical DNS data
+  - Paginated queries: supports retrieving large numbers of subdomains
+  - IP association: optionally includes DNS resolution records
+  - Deduplication: results are automatically deduplicated
+
+  **Use cases:**
+  - Information gathering before security testing
+  - Enterprise network asset discovery
+  - Attack surface analysis
+  - Threat intelligence collection
+  - Penetration testing information gathering
+
+  **Data sources:**
+  VirusTotal aggregates DNS data from multiple sources, including:
+  - Historical DNS resolution records
+  - Passive DNS databases
+  - Certificate transparency logs
+  - Security scan data
+
+  **Notes:**
+  - **API key required**: you need to register an account on VirusTotal and obtain an API key
+  - **Rate limits**: the free API is limited to 4 requests per minute
+  - **Data freshness**: data is based on historical scan records and may not be real-time
+  - **Authorized use**: only query targets you have legitimate authorization to test
+  - **Quota limits**: the free plan has a monthly query quota
+parameters:
+  - name: "domain"
+    type: "string"
+    description: |
+      Target domain to query (required).
+
+      **Format requirements:**
+      - Enter only the root domain; do not include a protocol prefix (http://) or a path
+      - Subdomain queries are supported
+
+      **Example values:**
+      - "example.com"
+      - "google.com"
+      - "baidu.com"
+      - "github.com"
+
+      **Notes:**
+      - The domain format must be correct
+      - Query results may include subdomains under other domains
+    required: true
+    position: 2
+    format: "positional"
+  - name: "limit"
+    type: "int"
+    description: |
+      Maximum number of results to return (optional).
+
+      **Details:**
+      - Default: 40
+      - Maximum: 1000 (API limit)
+      - Recommended: 100-500
+
+      **Notes:**
+      - Setting a very large value may cause request timeouts
+      - The API returns at most 40 entries per request; results are paginated automatically beyond that
+    required: false
+    position: 3
+    format: "positional"
+    default: 40
+  - name: "include_ips"
+    type: "bool"
+    description: |
+      Whether to include IP address information (optional).
+
+      **Details:**
+      - true: include DNS resolution records in the results
+      - false: return only the subdomain list
+
+      **Notes:**
+      - Including IP information increases the number of API calls
+      - May include historically resolved IPs, which are not necessarily accurate
+    required: false
+    position: 4
+    format: "positional"
+    default: false

@@ -1,0 +1,58 @@
+name: "pwninit"
+command: "pwninit"
+enabled: true
+short_description: "CTF binary exploitation setup tool"
+description: |
+  Pwninit is a tool for setting up CTF binary exploitation, automatically configuring libc and the loader.
+
+  **Key features:**
+  - Automatic libc identification
+  - Loader configuration
+  - Template generation
+  - Environment setup
+
+  **Use cases:**
+  - CTF challenges
+  - Exploit development
+  - Environment configuration
+  - Security research
+parameters:
+  - name: "binary"
+    type: "string"
+    description: "Binary file path"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "libc"
+    type: "string"
+    description: "libc file path"
+    required: false
+    flag: "--libc"
+    format: "flag"
+  - name: "ld"
+    type: "string"
+    description: "Loader file path"
+    required: false
+    flag: "--ld"
+    format: "flag"
+  - name: "template_type"
+    type: "string"
+    description: "Template type (python, c)"
+    required: false
+    flag: "--template"
+    format: "flag"
+    default: "python"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional pwninit arguments. Used to pass pwninit options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

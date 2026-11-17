@@ -1,0 +1,45 @@
+name: "lightx"
+command: "lightx"
+enabled: false
+short_description: "Lightweight asset discovery and vulnerability scanning tool"
+description: |
+  Lightx is an efficient lightweight scanning tool that supports fast probing of a single target, IP ranges, or a file list.
+
+  **Main features:**
+  - Supports multiple target formats (URL, IP, CIDR, domain)
+  - Supports reading targets in bulk from a file
+  - Fast asset discovery and service identification
+  - Lightweight concurrent scanning
+
+  **Use cases:**
+  - Bulk asset liveness detection
+  - Quick network range scanning
+  - Domain information gathering
+  - Early-stage penetration testing reconnaissance
+
+  **Target format examples:**
+  - Single URL: http://example.com
+  - Single IP: 192.168.1.1
+  - IP range: 192.168.1.1/24
+  - Domain: example.com
+  - File: targets.txt
+parameters:
+  - name: "target"
+    type: "string"
+    description: |
+      Scan target, supports multiple formats.
+
+      **Supported formats:**
+      - **URL**: "http://example.com" or "https://target.com/path"
+      - **IP address**: "192.168.1.1"
+      - **IP range (CIDR)**: "192.168.1.0/24", "10.0.0.0/8"
+      - **Domain**: "example.com" (without protocol prefix)
+      - **File path**: "/path/to/targets.txt" (one target per line in the file)
+
+      **Example values:**
+      - "http://172.16.0.4:9000"
+      - "192.168.1.1/24"
+      - "targets.txt"
+    required: true
+    flag: "-t"
+    format: "flag"

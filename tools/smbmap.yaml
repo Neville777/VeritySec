@@ -1,0 +1,48 @@
+name: "smbmap"
+command: "smbmap"
+enabled: true
+short_description: "SMB share enumeration and access tool"
+description: |
+  SMBMap is a tool for enumerating SMB shares and providing file access.
+
+  **Key features:**
+  - SMB share enumeration
+  - File listing and download
+  - Permission checks
+  - Multiple authentication methods supported
+
+  **Use cases:**
+  - SMB security testing
+  - File share auditing
+  - Penetration testing
+  - Network reconnaissance
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target IP address"
+    required: true
+    flag: "-H"
+    format: "flag"
+  - name: "username"
+    type: "string"
+    description: "Username"
+    required: false
+    flag: "-u"
+    format: "flag"
+  - name: "password"
+    type: "string"
+    description: "Password"
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "domain"
+    type: "string"
+    description: "Domain name"
+    required: false
+    flag: "-d"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional SMBMap arguments"
+    required: false
+    format: "positional"

@@ -1,0 +1,52 @@
+name: "pacu"
+command: "pacu"
+enabled: false
+short_description: "AWS penetration testing framework"
+description: |
+  Pacu is an AWS penetration testing framework for testing the security of AWS environments.
+
+  **Key features:**
+  - AWS penetration testing
+  - Privilege escalation
+  - Data access
+  - Modular architecture
+
+  **Use cases:**
+  - AWS security testing
+  - Penetration testing
+  - Permission testing
+  - Security assessment
+parameters:
+  - name: "session_name"
+    type: "string"
+    description: "Pacu session name"
+    required: false
+    flag: "--session"
+    format: "flag"
+    default: "hexstrike_session"
+  - name: "modules"
+    type: "string"
+    description: "Modules to run (comma-separated)"
+    required: false
+    flag: "--modules"
+    format: "flag"
+  - name: "regions"
+    type: "string"
+    description: "AWS regions (comma-separated)"
+    required: false
+    flag: "--regions"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional pacu arguments. Used to pass pacu options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

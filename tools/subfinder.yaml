@@ -1,0 +1,44 @@
+name: "subfinder"
+command: "subfinder"
+enabled: true
+short_description: "Passive subdomain discovery tool using multiple data sources"
+description: |
+  Subfinder is a passive subdomain discovery tool that finds subdomains by querying multiple data sources.
+
+  **Key features:**
+  - Passive subdomain discovery
+  - Multiple data source integration
+  - Fast scanning
+  - API key configuration support
+
+  **Use cases:**
+  - Subdomain enumeration
+  - Asset discovery
+  - Bug bounty reconnaissance
+  - Information gathering for penetration testing
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain"
+    required: true
+    flag: "-d"
+    format: "flag"
+  - name: "silent"
+    type: "bool"
+    description: "Silent mode"
+    required: false
+    default: true
+    flag: "-silent"
+    format: "flag"
+  - name: "all_sources"
+    type: "bool"
+    description: "Use all data sources"
+    required: false
+    default: false
+    flag: "-all"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional Subfinder arguments"
+    required: false
+    format: "positional"

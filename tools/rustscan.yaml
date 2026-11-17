@@ -1,0 +1,139 @@
+name: "rustscan"
+command: "rustscan"
+enabled: true
+short_description: "Ultra-fast port scanner (Rust); optional greppable output, batching, and script levels"
+description: |
+  RustScan 2.x: fast port discovery, with optional follow-up Nmap scripts.
+
+  **Mapping to `rustscan -h`:**
+  - `-a` / `--addresses`: target list (comma-separated or a file)
+  - `-p`: comma-separated ports; `-r`: port range `start-end` (use one or the other, or combine with `-p`; the CLI is authoritative)
+  - `-g` / `--greppable`: output ports only, for grep/piping
+  - `--scripts`: **official default is default** (runs Nmap); set to **none** for port discovery only, which is faster
+  - `-b` batch-size, `-t` timeout, `--scan-order`, etc. can be tuned for speed and ordering
+
+  **Usage tips:**
+  - For fast port scanning without Nmap: set `scripts` to `none`, and add `-g` if needed
+  - For service detection/scripts: use `default` or `custom`, and make sure nmap is installed on this machine
+parameters:
+  # -a, --addresses
+  - name: "target"
+    type: "string"
+    description: |
+      Corresponds to `-a`: comma-separated CIDR, IP, or hostnames; can also be a file path containing newline-separated or list entries.
+      Examples: `192.168.1.1`, `10.0.0.1,10.0.0.2`, `192.168.0.0/24`
+    required: true
+    flag: "-a"
+    format: "flag"
+  # -p, --ports; for ranges use range (-r), do not put 1-1000 in ports
+  - name: "ports"
+    type: "string"
+    description: |
+      Ports to scan, **only** as a comma-separated list, corresponding to `-p`.
+      Examples: `22,80,443`, `80,443,8080`.
+      For a range such as `1-1000`, use the **range** parameter (`-r`) instead of this one.
+    required: false
+    flag: "-p"
+    format: "flag"
+  # -r, --range (choose one of this and the ports list, or combine as described in the official docs)
+  - name: "range"
+    type: "string"
+    description: |
+      Port range, in the format start-end, corresponding to `-r`.
+      Examples: `1-1000`, `1-65535` (all ports is very slow).
+      For discrete ports such as `22,80,443`, use **ports** (`-p`) instead of this parameter.
+    required: false
+    flag: "-r"
+    format: "flag"
+  # -u, --ulimit
+  - name: "ulimit"
+    type: "int"
+    description: "ulimit to raise for scanning; adjust based on the system's file descriptor limit"
+    required: false
+    flag: "-u"
+    format: "flag"
+    default: 5000
+  # --scripts: none | default | custom (CLI default is default)
+  - name: "scripts"
+    type: "string"
+    description: |
+      Script level; **must** be passed as a string, never true/false.
+      - **none**: do not run Nmap; port discovery only (fastest)
+      - **default**: matches rustscan's official default; runs Nmap
+      - **custom**: custom scripts; usually needs additional_args
+    required: false
+    flag: "--scripts"
+    format: "flag"
+    default: "none"
+    options:
+      - "none"
+      - "default"
+      - "custom"
+  # -g, --greppable: port list only, no Nmap output
+  - name: "greppable"
+    type: "bool"
+    description: "Greppable mode: outputs ports only, suitable for script parsing or writing to a file"
+    required: false
+    flag: "-g"
+    format: "flag"
+    default: false
+  # -b, --batch-size [default: 4500]
+  - name: "batch_size"
+    type: "int"
+    description: "Number of concurrent ports per batch; larger is faster but limited by the OS open-file limit. Official default 4500"
+    required: false
+    flag: "-b"
+    format: "flag"
+  # -t, --timeout ms [default: 1500]
+  - name: "timeout_ms"
+    type: "int"
+    description: "Per-port timeout (milliseconds). Official default 1500"
+    required: false
+    flag: "-t"
+    format: "flag"
+  # --scan-order serial | random [default: serial]
+  - name: "scan_order"
+    type: "string"
+    description: "Scan order: serial for ascending; random for random order"
+    required: false
+    flag: "--scan-order"
+    format: "flag"
+    options:
+      - "serial"
+      - "random"
+  # --top: top 1000 ports
+  - name: "top_ports"
+    type: "bool"
+    description: "Use the built-in top 1000 ports (equivalent to passing `--top`)"
+    required: false
+    flag: "--top"
+    format: "flag"
+    default: false
+  # -e, --exclude-ports
+  - name: "exclude_ports"
+    type: "string"
+    description: "Ports to exclude, comma-separated. Example: `80,443`"
+    required: false
+    flag: "-e"
+    format: "flag"
+  # -x, --exclude-addresses
+  - name: "exclude_addresses"
+    type: "string"
+    description: "Addresses to exclude, comma-separated CIDR/IP/hostnames"
+    required: false
+    flag: "-x"
+    format: "flag"
+  # --tries [default: 1]
+  - name: "tries"
+    type: "int"
+    description: "Number of retries before a port is marked closed; 0 is corrected to 1"
+    required: false
+    flag: "--tries"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Options not listed above can be written here, separated by spaces.
+      Examples: `--no-banner`, `--udp`, `-n` (ignore config file), `-c /path/config.toml`, `--resolver 8.8.8.8`
+    required: false
+    format: "positional"

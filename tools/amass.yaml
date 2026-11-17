@@ -1,0 +1,44 @@
+name: "amass"
+command: "amass"
+enabled: true
+short_description: "Subdomain enumeration and network mapping tool"
+description: |
+  Amass is a deep subdomain enumeration and network mapping tool that discovers subdomains of a target domain using multiple techniques.
+
+  **Main features:**
+  - Passive and active subdomain enumeration
+  - Integration with multiple data sources
+  - Network mapping and visualization
+  - Certificate transparency log queries
+
+  **Use cases:**
+  - Subdomain discovery
+  - Asset discovery
+  - Penetration testing reconnaissance
+  - Bug bounty reconnaissance
+parameters:
+  - name: "mode"
+    type: "string"
+    description: |
+      Run mode (Amass subcommand):
+      - `enum`: subdomain enumeration
+      - `intel`: threat intelligence mode
+      - `viz`: result visualization
+
+      **Note:** Amass uses subcommand form, which must be the first positional argument.
+    required: false
+    default: "enum"
+    position: 0
+    format: "positional"
+    options: ["enum", "intel", "viz"]
+  - name: "domain"
+    type: "string"
+    description: "Target domain"
+    required: true
+    flag: "-d"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional Amass arguments"
+    required: false
+    format: "positional"

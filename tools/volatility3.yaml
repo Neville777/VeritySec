@@ -1,0 +1,51 @@
+name: "volatility3"
+command: "volatility3"
+enabled: true
+short_description: "Volatility3 memory forensics analysis tool"
+description: |
+  Volatility3 is the next-generation version of the Volatility framework, used for memory forensics analysis.
+
+  **Key features:**
+  - Memory dump analysis
+  - Advanced plugin system
+  - Improved performance
+  - Better documentation
+
+  **Use cases:**
+  - Memory forensics
+  - Malware analysis
+  - Incident response
+  - Digital forensics
+parameters:
+  - name: "memory_file"
+    type: "string"
+    description: "Memory dump file path"
+    required: true
+    flag: "-f"
+    format: "flag"
+  - name: "plugin"
+    type: "string"
+    description: "Volatility3 plugin to run"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "output_file"
+    type: "string"
+    description: "Output file path"
+    required: false
+    flag: "-o"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional volatility3 arguments. Used to pass volatility3 options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

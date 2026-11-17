@@ -1,0 +1,60 @@
+name: "graphql-scanner"
+command: "graphqlmap"
+enabled: true
+short_description: "GraphQL security scanning and introspection tool"
+description: |
+  Advanced GraphQL security scanning and introspection tool for detecting security issues in GraphQL APIs.
+
+  **Main features:**
+  - GraphQL introspection
+  - Query depth testing
+  - Mutation operation testing
+  - Vulnerability assessment
+
+  **Use cases:**
+  - GraphQL security testing
+  - API security assessment
+  - Vulnerability discovery
+  - Security testing
+parameters:
+  - name: "endpoint"
+    type: "string"
+    description: "GraphQL endpoint URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "introspection"
+    type: "bool"
+    description: "Test introspection queries"
+    required: false
+    default: true
+    flag: "--introspection"
+    format: "flag"
+  - name: "query_depth"
+    type: "int"
+    description: "Maximum query depth to test"
+    required: false
+    default: 10
+    flag: "--depth"
+    format: "flag"
+  - name: "test_mutations"
+    type: "bool"
+    description: "Test mutation operations"
+    required: false
+    default: true
+    flag: "--mutations"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional graphql-scanner arguments. Used to pass graphql-scanner options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

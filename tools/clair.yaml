@@ -1,0 +1,53 @@
+name: "clair"
+command: "clair"
+enabled: false
+short_description: "Container vulnerability analysis tool"
+description: |
+  Clair is a container vulnerability analysis tool used to scan container images for vulnerabilities.
+
+  **Main features:**
+  - Container image scanning
+  - Vulnerability detection
+  - Multiple database support
+  - API interface
+
+  **Use cases:**
+  - Container security scanning
+  - Vulnerability detection
+  - CI/CD integration
+  - Security auditing
+parameters:
+  - name: "image"
+    type: "string"
+    description: "Container image to scan"
+    required: true
+    flag: "--image"
+    format: "flag"
+  - name: "config"
+    type: "string"
+    description: "Clair configuration file"
+    required: false
+    flag: "--config"
+    format: "flag"
+    default: "/etc/clair/config.yaml"
+  - name: "output_format"
+    type: "string"
+    description: "Output format (json, yaml)"
+    required: false
+    flag: "--format"
+    format: "flag"
+    default: "json"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional clair arguments. Used to pass clair options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

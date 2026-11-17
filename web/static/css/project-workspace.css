@@ -1,0 +1,8 @@
+/* Project workspace tab (reuses mcp-tab and tinst-empty from mcp-page.css) */
+.pw-overview { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.pw-overview-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pw-name { font-size: 16px; }
+.pw-created, .pw-muted { color: var(--text-muted, #7c8596); font-size: 12px; }
+.pw-count { font-size: 11px; padding: 1px 7px; border-radius: 999px; background: var(--bg-tertiary, #1d2230); color: var(--text-secondary, #9aa3b2); }
+.pw-dl-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+.pw-table code { font-size: 11px; word-break: break-all; }

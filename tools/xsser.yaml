@@ -1,0 +1,45 @@
+name: "xsser"
+command: "xsser"
+enabled: true
+short_description: "XSS vulnerability testing tool"
+description: |
+  XSSer is an automated XSS vulnerability testing tool.
+
+  **Key features:**
+  - XSS vulnerability detection
+  - Multiple XSS techniques
+  - Automated testing
+  - Report generation
+
+  **Use cases:**
+  - XSS vulnerability testing
+  - Web application security testing
+  - Penetration testing
+  - Vulnerability verification
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "--url"
+    format: "flag"
+  - name: "params"
+    type: "string"
+    description: "Parameters to test"
+    required: false
+    flag: "--Fp"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional xsser arguments. Used to pass xsser options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

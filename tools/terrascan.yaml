@@ -1,0 +1,66 @@
+name: "terrascan"
+command: "terrascan"
+enabled: true
+short_description: "Infrastructure-as-Code security scanning tool"
+description: |
+  Terrascan is an infrastructure-as-code security scanning tool that detects security issues in IaC configurations.
+
+  **Key features:**
+  - IaC security scanning
+  - Multiple framework support
+  - Policy checks
+  - Compliance validation
+
+  **Use cases:**
+  - IaC security scanning
+  - Cloud configuration auditing
+  - Security policy checks
+  - Compliance checks
+parameters:
+  - name: "scan_type"
+    type: "string"
+    description: "Scan type (all, terraform, k8s, etc.)"
+    required: false
+    flag: "--scan-type"
+    format: "flag"
+    default: "all"
+  - name: "iac_dir"
+    type: "string"
+    description: "IaC directory"
+    required: false
+    flag: "-d"
+    format: "flag"
+    default: "."
+  - name: "policy_type"
+    type: "string"
+    description: "Policy type to use"
+    required: false
+    flag: "--policy-type"
+    format: "flag"
+  - name: "output_format"
+    type: "string"
+    description: "Output format (json, yaml, xml)"
+    required: false
+    flag: "--output"
+    format: "flag"
+    default: "json"
+  - name: "severity"
+    type: "string"
+    description: "Severity filter (high, medium, low)"
+    required: false
+    flag: "--severity"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional terrascan arguments. Used to pass terrascan options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

@@ -1,0 +1,20 @@
+name: "api-schema-analyzer"
+command: "spectral"
+args: ["lint"]
+enabled: true
+short_description: "API schema analysis tool that identifies potential security issues"
+description: |
+  Runs `spectral lint` to statically analyze OpenAPI/Swagger/GraphQL schemas. Can be combined with custom rulesets or output formats.
+parameters:
+  - name: "schema_url"
+    type: "string"
+    description: "API schema file or URL (the target passed to spectral lint)"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional Spectral arguments, such as `--ruleset`, `--format`, `--fail-severity`, etc.
+    required: false
+    format: "positional"

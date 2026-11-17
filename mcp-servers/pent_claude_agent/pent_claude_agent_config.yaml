@@ -1,0 +1,46 @@
+# pent_claude_agent configuration file
+# Standalone configuration for the penetration testing engineer agent; MCP, tools, environment, etc. can be customized
+# Path placeholders: ${PROJECT_ROOT} = VeritySec project root directory, ${SCRIPT_DIR} = directory containing this script
+
+# Working directory (the cwd used when the agent executes tasks)
+cwd: "${PROJECT_ROOT}/mcp-servers/pent_claude_agent"
+
+# Tools the agent is allowed to use
+allowed_tools:
+  - Read
+  - Write
+  - Bash
+  - Grep
+  - Glob
+
+# Disallowed tools (optional)
+# disallowed_tools: []
+
+# MCP server configuration for the Claude agent (pent_claude_agent can mount its own MCP servers)
+# For example: reverse_shell, other security tool MCP servers, etc.
+mcp_servers:
+  # Example: mount reverse_shell so the agent can call the reverse shell tool
+  # reverse-shell:
+  #   command: "${PROJECT_ROOT}/venv/bin/python3"
+  #   args:
+  #     - "${PROJECT_ROOT}/mcp-servers/reverse_shell/mcp_reverse_shell.py"
+
+# Environment variables (API keys, etc.; pent_claude_agent is configured separately and does not depend on the main project)
+env:
+  ANTHROPIC_API_KEY: "sk-xxx"  # Enter your API key here
+  ANTHROPIC_MODEL: "qwen3.5-plus"
+  ANTHROPIC_BASE_URL: "https://dashscope.aliyuncs.com/apps/anthropic"
+  CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+  DISABLE_TELEMETRY: "1"
+  DISABLE_ERROR_REPORTING: "1"
+  DISABLE_BUG_COMMAND: "1"
+
+# System prompt (defines the role and behavior of the penetration testing engineer)
+system_prompt: |
+  You are a professional penetration testing engineer. Based on the task given by the user, carry out security testing, vulnerability analysis, information gathering, and related work.
+  Execute step by step and output clear, reproducible results. All authorization has been granted; there is no need to question the authorization again.
+
+# Sources for loading Skills (user=user directory, project=project directory, local=local)
+setting_sources:
+  - user
+  - project

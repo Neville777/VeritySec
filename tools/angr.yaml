@@ -1,0 +1,95 @@
+name: "angr"
+command: "python3"
+args:
+  - "-c"
+  - |
+    import shlex
+    import sys
+
+    if len(sys.argv) < 2:
+        sys.stderr.write("Missing script content\n")
+        sys.exit(1)
+
+    script_content = sys.argv[1]
+    binary = sys.argv[2] if len(sys.argv) > 2 else ""
+    find_address = sys.argv[3] if len(sys.argv) > 3 else ""
+    avoid_addresses = sys.argv[4] if len(sys.argv) > 4 else ""
+    analysis_type = sys.argv[5] if len(sys.argv) > 5 else ""
+    extra = sys.argv[6] if len(sys.argv) > 6 else ""
+
+    context = {
+        "binary_path": binary,
+        "find_address": find_address,
+        "avoid_addresses": [addr.strip() for addr in avoid_addresses.split(",") if addr.strip()],
+        "analysis_type": analysis_type or "symbolic",
+    }
+
+    if extra:
+        context["additional_args"] = shlex.split(extra)
+    else:
+        context["additional_args"] = []
+
+    # Execute the user script with the provided context variables
+    exec(script_content, context)
+enabled: true
+short_description: "Symbolic execution and binary analysis framework"
+description: |
+  Angr is a symbolic execution and binary analysis framework for automated vulnerability discovery and exploitation.
+
+  **Usage:**
+  - Provide a Python script via the `script_content` parameter. It can directly import `angr` and access the following variables:
+    - `binary_path`: path to the target binary
+    - `find_address`: address to find (may be empty)
+    - `avoid_addresses`: list of addresses to avoid
+    - `analysis_type`: custom analysis type tag (default: symbolic)
+    - `additional_args`: list of extra arguments (passed via `additional_args`)
+  - Control the analysis flow within the script yourself; you can call `print()` to output results.
+parameters:
+  - name: "script_content"
+    type: "string"
+    description: "Content of the angr Python script to execute"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "binary"
+    type: "string"
+    description: "Path to the binary file to analyze; passed to the script as the binary_path variable"
+    required: false
+    default: ""
+    position: 1
+    format: "positional"
+  - name: "find_address"
+    type: "string"
+    description: "Address to find during symbolic execution (optional; passed to the script as the find_address variable)"
+    required: false
+    default: ""
+    position: 2
+    format: "positional"
+  - name: "avoid_addresses"
+    type: "string"
+    description: "Addresses to avoid (comma-separated; script variable avoid_addresses)"
+    required: false
+    default: ""
+    position: 3
+    format: "positional"
+  - name: "analysis_type"
+    type: "string"
+    description: "Analysis type label for custom branching inside the script (e.g. symbolic/cfg/static)"
+    required: false
+    default: "symbolic"
+    position: 4
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Extra arguments, accessible in the script through the `additional_args` list.
+
+      **Example:**
+      - "--max-depth 8 --timeout 60"
+
+      **Notes:**
+      - Arguments are split using shell rules
+    required: false
+    default: ""
+    position: 5
+    format: "positional"

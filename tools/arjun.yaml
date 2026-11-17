@@ -1,0 +1,68 @@
+name: "arjun"
+command: "arjun"
+enabled: true
+short_description: "HTTP parameter discovery tool"
+description: |
+  Arjun is an HTTP parameter discovery tool used to find hidden parameters in web applications.
+
+  **Main features:**
+  - HTTP parameter discovery
+  - Support for multiple HTTP methods
+  - Multi-threading support
+  - Stable mode
+
+  **Use cases:**
+  - Parameter discovery
+  - Web application security testing
+  - Bug bounty reconnaissance
+  - Security testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "method"
+    type: "string"
+    description: "HTTP method (GET, POST, etc.)"
+    required: false
+    flag: "-m"
+    format: "flag"
+    default: "GET"
+  - name: "wordlist"
+    type: "string"
+    description: "Custom wordlist file"
+    required: false
+    flag: "-w"
+    format: "flag"
+  - name: "threads"
+    type: "int"
+    description: "Number of threads"
+    required: false
+    flag: "-t"
+    format: "flag"
+    default: 25
+  - name: "stable"
+    type: "bool"
+    description: "Use stable mode"
+    required: false
+    flag: "--stable"
+    format: "flag"
+    default: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional Arjun arguments. Used to pass Arjun options not defined in this parameter list.
+
+      **Example values:**
+      - "-o output.txt": write output to a file
+      - "-q": quiet mode
+      - "-i": read URLs from a file
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

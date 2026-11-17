@@ -1,0 +1,53 @@
+name: "gobuster"
+command: "gobuster"
+enabled: false
+short_description: "Web content scanning tool for discovering directories, files, and subdomains"
+description: |
+  Gobuster is a fast content discovery tool for enumerating directories, files, and subdomains of web applications.
+
+  **Main features:**
+  - Directory and file discovery
+  - DNS subdomain enumeration
+  - Virtual host discovery
+  - Supports multiple modes (dir, dns, fuzz, vhost)
+
+  **Use cases:**
+  - Web application security testing
+  - Directory enumeration and file discovery
+  - Subdomain discovery
+  - Penetration testing reconnaissance
+parameters:
+  - name: "mode"
+    type: "string"
+    description: |
+      Scan mode (Gobuster subcommand), with the following values:
+      - `dir`: directory/file enumeration
+      - `dns`: DNS subdomain enumeration
+      - `fuzz`: template FUZZ scanning
+      - `vhost`: virtual host discovery
+
+      **Note:**
+      Gobuster requires the mode subcommand as the first argument, so it is passed here as a positional argument.
+    required: false
+    default: "dir"
+    position: 0
+    format: "positional"
+    options: ["dir", "dns", "fuzz", "vhost"]
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "wordlist"
+    type: "string"
+    description: "Wordlist file path"
+    required: false
+    default: "/usr/share/wordlists/dirb/common.txt"
+    flag: "-w"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: "Additional Gobuster arguments"
+    required: false
+    format: "positional"

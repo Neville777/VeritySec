@@ -1,0 +1,54 @@
+name: "linpeas"
+command: "linpeas.sh"
+enabled: true
+short_description: "Linux privilege escalation enumeration script that automatically detects common escalation paths"
+description: |
+  LinPEAS (Linux Privilege Escalation Awesome Script) is an automated privilege escalation enumeration script used to detect common escalation paths on Linux systems.
+
+  **Main features:**
+  - System information gathering
+  - Permission and group checks
+  - Writable file and directory detection
+  - SUID/SGID file discovery
+  - Environment variable checks
+  - Scheduled task analysis
+  - Network configuration checks
+  - Sensitive file discovery
+
+  **Use cases:**
+  - Privilege escalation during penetration testing
+  - Security auditing
+  - Post-exploitation testing
+  - CTF competitions
+
+  **Notes:**
+  - The linpeas.sh script must already be downloaded to the target system
+  - Execution may take a long time
+  - The output is large; saving it to a file is recommended
+parameters:
+  - name: "output"
+    type: "string"
+    description: "Output file path (optional)"
+    required: false
+    flag: "-o"
+    format: "flag"
+  - name: "fast"
+    type: "bool"
+    description: "Fast mode; skips time-consuming checks"
+    required: false
+    flag: "-fast"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional linpeas arguments. Used to pass linpeas options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

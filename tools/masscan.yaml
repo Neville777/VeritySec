@@ -1,0 +1,65 @@
+name: "masscan"
+command: "masscan"
+enabled: true
+short_description: "High-speed Internet-scale port scanning tool"
+description: |
+  Masscan is a high-speed port scanning tool that can scan the entire Internet in minutes.
+
+  **Main features:**
+  - Extremely high scanning speed
+  - Supports large-scale network scanning
+  - Banner grabbing
+  - Configurable scan rate
+
+  **Use cases:**
+  - Large-scale network scanning
+  - Internet-scale scanning
+  - Fast port discovery
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target IP address or CIDR range"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "ports"
+    type: "string"
+    description: "Port range (e.g. 1-65535)"
+    required: false
+    flag: "-p"
+    format: "flag"
+    default: "1-65535"
+  - name: "rate"
+    type: "int"
+    description: "Packets per second"
+    required: false
+    flag: "--rate"
+    format: "flag"
+    default: 1000
+  - name: "interface"
+    type: "string"
+    description: "Network interface"
+    required: false
+    flag: "-e"
+    format: "flag"
+  - name: "banners"
+    type: "bool"
+    description: "Enable banner grabbing"
+    required: false
+    flag: "--banners"
+    format: "flag"
+    default: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional masscan arguments. Used to pass masscan options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

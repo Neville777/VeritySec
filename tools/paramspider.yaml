@@ -1,0 +1,58 @@
+name: "paramspider"
+command: "paramspider"
+enabled: true
+short_description: "Mines parameters from web archives"
+description: |
+  ParamSpider mines parameters from web archives to discover hidden parameters.
+
+  **Key features:**
+  - Parameter mining
+  - Web archive querying
+  - Multi-level depth support
+  - Extension filtering
+
+  **Use cases:**
+  - Parameter discovery
+  - Bug bounty reconnaissance
+  - Web application security testing
+  - Security testing
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain"
+    required: true
+    flag: "-d"
+    format: "flag"
+  - name: "level"
+    type: "int"
+    description: "Mining depth level"
+    required: false
+    flag: "-l"
+    format: "flag"
+    default: 2
+  - name: "exclude"
+    type: "string"
+    description: "File extensions to exclude"
+    required: false
+    flag: "-e"
+    format: "flag"
+  - name: "output"
+    type: "string"
+    description: "Output file path"
+    required: false
+    flag: "-o"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional paramspider arguments. Used to pass paramspider options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

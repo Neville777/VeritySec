@@ -1,0 +1,57 @@
+name: "hashpump"
+command: "hashpump"
+enabled: true
+short_description: "Hash length extension attack tool"
+description: |
+  HashPump is a tool for performing hash length extension attacks.
+
+  **Main features:**
+  - Hash length extension attacks
+  - Support for multiple hash algorithms
+  - Signature generation
+  - Data appending
+
+  **Use cases:**
+  - Cryptographic attacks
+  - Hash function testing
+  - CTF challenges
+  - Security research
+parameters:
+  - name: "signature"
+    type: "string"
+    description: "Original hash signature"
+    required: true
+    flag: "-s"
+    format: "flag"
+  - name: "data"
+    type: "string"
+    description: "Original data"
+    required: true
+    flag: "-d"
+    format: "flag"
+  - name: "key_length"
+    type: "int"
+    description: "Key length"
+    required: true
+    flag: "-k"
+    format: "flag"
+  - name: "append_data"
+    type: "string"
+    description: "Data to append"
+    required: true
+    flag: "-a"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional hashpump arguments. Used to pass hashpump options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

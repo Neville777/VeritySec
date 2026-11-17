@@ -1,0 +1,51 @@
+name: "dnsenum"
+command: "dnsenum"
+enabled: true
+short_description: "DNS enumeration tool"
+description: |
+  DNSenum is a DNS information gathering tool used to enumerate DNS information.
+
+  **Main features:**
+  - DNS information gathering
+  - Subdomain enumeration
+  - Zone transfer testing
+  - Reverse lookup
+
+  **Use cases:**
+  - DNS enumeration
+  - Subdomain discovery
+  - Network reconnaissance
+  - Penetration testing
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain name"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "dns_server"
+    type: "string"
+    description: "DNS server to use"
+    required: false
+    flag: "-n"
+    format: "flag"
+  - name: "wordlist"
+    type: "string"
+    description: "Wordlist file for brute-force"
+    required: false
+    flag: "-f"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional dnsenum arguments. Used to pass dnsenum options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

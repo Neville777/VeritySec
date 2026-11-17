@@ -1,0 +1,66 @@
+name: "dirsearch"
+command: "dirsearch"
+enabled: true
+short_description: "Advanced directory and file discovery tool"
+description: |
+  Dirsearch is an advanced web content scanner used to discover directories and files.
+
+  **Main features:**
+  - Fast directory and file discovery
+  - Multi-threading support
+  - Recursive scanning
+  - Extension filtering
+
+  **Use cases:**
+  - Web application security testing
+  - Directory enumeration
+  - File discovery
+  - Penetration testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "extensions"
+    type: "string"
+    description: "File extensions (comma-separated)"
+    required: false
+    flag: "-e"
+    format: "flag"
+    default: "php,html,js,txt,xml,json"
+  - name: "wordlist"
+    type: "string"
+    description: "Wordlist file path"
+    required: false
+    flag: "-w"
+    format: "flag"
+  - name: "threads"
+    type: "int"
+    description: "Number of threads"
+    required: false
+    flag: "-t"
+    format: "flag"
+    default: 30
+  - name: "recursive"
+    type: "bool"
+    description: "Enable recursive scanning"
+    required: false
+    flag: "-r"
+    format: "flag"
+    default: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional dirsearch arguments. Used to pass dirsearch options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

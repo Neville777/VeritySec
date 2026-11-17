@@ -1,0 +1,63 @@
+name: "katana"
+command: "katana"
+enabled: true
+short_description: "Next-generation web crawler and spider tool"
+description: |
+  Katana is a fast, intelligent web crawler used to discover endpoints and resources in web applications.
+
+  **Main features:**
+  - Intelligent web crawling
+  - JavaScript rendering support
+  - Form extraction
+  - Endpoint discovery
+
+  **Use cases:**
+  - Web application reconnaissance
+  - Endpoint discovery
+  - Content crawling
+  - Security testing
+parameters:
+  - name: "url"
+    type: "string"
+    description: "Target URL"
+    required: true
+    flag: "-u"
+    format: "flag"
+  - name: "depth"
+    type: "int"
+    description: "Crawl depth"
+    required: false
+    flag: "-d"
+    format: "flag"
+    default: 3
+  - name: "js_crawl"
+    type: "bool"
+    description: "Enable JavaScript crawling"
+    required: false
+    flag: "-jc"
+    format: "flag"
+    default: true
+  - name: "form_extraction"
+    type: "bool"
+    description: "Enable form extraction (-fx / -form-extraction)"
+    required: false
+    flag: "-fx"
+    format: "flag"
+    default: true
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional Katana arguments. Used to pass Katana options not defined in this parameter list.
+
+      **Example values:**
+      - "-headless": use a headless browser
+      - "-output-template '{{url}}'": custom output format
+      - "-output output.txt": write output to a file
+      - "-c 20": concurrency
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

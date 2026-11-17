@@ -1,0 +1,59 @@
+name: "ghidra"
+command: "analyzeHeadless"
+enabled: true
+short_description: "Advanced binary analysis and reverse engineering tool"
+description: |
+  Ghidra is a free binary analysis and reverse engineering tool developed by the NSA.
+
+  **Main features:**
+  - Disassembly and decompilation
+  - Advanced analysis
+  - Script support
+  - Collaboration features
+
+  **Use cases:**
+  - Binary analysis
+  - Reverse engineering
+  - Malware analysis
+  - Vulnerability research
+parameters:
+  - name: "project_dir"
+    type: "string"
+    description: "Directory where Ghidra projects are stored"
+    required: false
+    default: "/tmp/ghidra_projects"
+    position: 0
+    format: "positional"
+  - name: "project_name"
+    type: "string"
+    description: "Ghidra project name"
+    required: false
+    default: "veritysec_analysis"
+    position: 1
+    format: "positional"
+  - name: "binary"
+    type: "string"
+    description: "Path to the binary file to analyze"
+    required: true
+    flag: "-import"
+    format: "flag"
+  - name: "script_file"
+    type: "string"
+    description: "Optional Ghidra script file (executed via -postScript)"
+    required: false
+    flag: "-postScript"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional ghidra arguments. Used to pass ghidra options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

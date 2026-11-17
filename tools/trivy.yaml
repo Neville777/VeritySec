@@ -1,0 +1,62 @@
+name: "trivy"
+command: "trivy"
+enabled: true
+short_description: "Container and filesystem vulnerability scanner"
+description: |
+  Trivy is a simple and comprehensive vulnerability scanner for containers and filesystems.
+
+  **Key features:**
+  - Container image scanning
+  - Filesystem scanning
+  - Code repository scanning
+  - Configuration file scanning
+
+  **Use cases:**
+  - Container security scanning
+  - CI/CD integration
+  - Vulnerability detection
+  - Security auditing
+parameters:
+  - name: "scan_type"
+    type: "string"
+    description: "Scan type (image, fs, repo, config)"
+    required: false
+    default: "image"
+    position: 0
+    format: "positional"
+  - name: "target"
+    type: "string"
+    description: "Scan target (image name, directory, or repository)"
+    required: true
+    position: 1
+    format: "positional"
+  - name: "severity"
+    type: "string"
+    description: "Severity filter (UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL)"
+    required: false
+    flag: "--severity"
+    format: "flag"
+  - name: "output_format"
+    type: "string"
+    description: "Output format (json, table, sarif)"
+    required: false
+    flag: "--format"
+    format: "flag"
+    default: "json"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional Trivy arguments. Used to pass Trivy options not defined in the parameter list.
+
+      **Example values:**
+      - "--exit-code 1": exit code is 1 when vulnerabilities are found
+      - "--skip-dirs": skip directories
+      - "--skip-files": skip files
+      - "--no-progress": do not show the progress bar
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

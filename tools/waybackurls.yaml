@@ -1,0 +1,52 @@
+name: "waybackurls"
+command: "waybackurls"
+enabled: true
+short_description: "Fetch historical URLs from the Wayback Machine"
+description: |
+  Waybackurls fetches historical URLs for a target domain from the Wayback Machine.
+
+  **Key features:**
+  - Historical URL discovery
+  - Version retrieval
+  - Subdomain support
+
+  **Use cases:**
+  - Historical URL collection
+  - Bug bounty reconnaissance
+  - Security testing
+  - Content discovery
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "get_versions"
+    type: "bool"
+    description: "Fetch URLs for all versions"
+    required: false
+    flag: "-get-versions"
+    format: "flag"
+    default: false
+  - name: "no_subs"
+    type: "bool"
+    description: "Exclude subdomains"
+    required: false
+    flag: "-no-subs"
+    format: "flag"
+    default: false
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional waybackurls arguments. Used to pass waybackurls options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

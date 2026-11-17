@@ -1,0 +1,60 @@
+name: "scout-suite"
+command: "scout"
+enabled: true
+short_description: "Multi-cloud security assessment tool"
+description: |
+  Scout Suite is a multi-cloud security assessment tool supporting AWS, Azure, GCP, Aliyun, and OCI.
+
+  **Key features:**
+  - Multi-cloud security assessment
+  - Configuration auditing
+  - Security best practice checks
+  - Detailed report generation
+
+  **Use cases:**
+  - Cloud security auditing
+  - Compliance checks
+  - Security assessment
+  - Cloud configuration auditing
+parameters:
+  - name: "provider"
+    type: "string"
+    description: "Cloud provider (aws, azure, gcp, aliyun, oci)"
+    required: false
+    flag: "--provider"
+    format: "flag"
+    default: "aws"
+  - name: "profile"
+    type: "string"
+    description: "AWS profile"
+    required: false
+    flag: "--profile"
+    format: "flag"
+    default: "default"
+  - name: "report_dir"
+    type: "string"
+    description: "Directory where reports are saved"
+    required: false
+    flag: "--report-dir"
+    format: "flag"
+    default: "/tmp/scout-suite"
+  - name: "services"
+    type: "string"
+    description: "Specific services to assess"
+    required: false
+    flag: "--services"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional scout-suite arguments. Used to pass scout-suite options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

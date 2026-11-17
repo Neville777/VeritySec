@@ -1,0 +1,85 @@
+name: "nmap"
+command: "nmap"
+# Default: TCP connect scan + version detection + default NSE scripts (works without root)
+args: ["-sT", "-sV", "-sC"]
+enabled: true
+short_description: "Network scanning: ports/services/scripts; optional timing, custom NSE, OS detection (requires root)"
+description: |
+  Network mapping and port scanning.
+
+  **Default behavior (only target/ports are needed):**
+  - `-sT` TCP connect scan (no root required)
+  - `-sV` version detection
+  - `-sC` default NSE scripts
+
+  **Optional enhancements:**
+  - `timing`: `-T0` to `-T5` timing
+  - `nse_scripts`: `--script` custom scripts (e.g. `vuln`, `http-*`)
+  - `os_detection`: `-O` **requires root**, otherwise nmap will QUIT
+  - `aggressive`: `-A` **requires root** (includes OS detection)
+  - `scan_type`: if provided, it **completely replaces** the default `-sT -sV -sC` above; you must specify the options you need yourself (e.g. `-sT -sV`)
+
+  **Notes:**
+  - `-sS` SYN scan requires root; without root, use the default or `-sT`
+  - Scanning all ports `1-65535` is very slow; start with common ports
+  - Make sure you have permission to scan the target
+parameters:
+  - name: "target"
+    type: "string"
+    description: |
+      Target IP, hostname, CIDR, or domain; if a URL is given, the host portion is extracted automatically.
+
+      **Examples:** `192.168.1.1`, `10.0.0.0/24`, `example.com`
+    required: true
+    position: 1
+    format: "positional"
+  - name: "ports"
+    type: "string"
+    description: |
+      Port range. Examples: `80`, `1-1000`, `80,443,8080`, `1-65535` (all ports is very slow)
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "timing"
+    type: "string"
+    description: "Timing template T0–T5; higher numbers are faster. Example: `4` generates `-T4`"
+    required: false
+    format: "template"
+    template: "-T{value}"
+  - name: "nse_scripts"
+    type: "string"
+    description: "NSE scripts, passed to `--script`. Examples: `vuln`, `http-title,http-headers`"
+    required: false
+    flag: "--script"
+    format: "flag"
+  - name: "os_detection"
+    type: "bool"
+    description: |
+      Enable `-O` OS detection. **Requires root**; keep false if not running as root.
+    required: false
+    flag: "-O"
+    format: "flag"
+    default: false
+  - name: "aggressive"
+    type: "bool"
+    description: |
+      Enable `-A` aggressive scan (includes OS detection). **Requires root**; keep false if not running as root.
+    required: false
+    flag: "-A"
+    format: "flag"
+    default: false
+  - name: "scan_type"
+    type: "string"
+    description: |
+      Scan type options; **if provided, it replaces the default `-sT -sV -sC`**, keeping only the options you write.
+      Separate multiple options with spaces, e.g.: `-sT -sV`, `-sU` (UDP).
+    required: false
+    format: "template"
+    template: "{value}"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional arguments, appended to the end of the command separated by spaces.
+      Examples: `--max-retries 3`, `-v`, `-Pn`
+    required: false
+    format: "positional"

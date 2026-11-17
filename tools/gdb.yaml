@@ -1,0 +1,51 @@
+name: "gdb"
+command: "gdb"
+enabled: true
+short_description: "GNU debugger for binary analysis and debugging"
+description: |
+  GDB is the GNU debugger, used to debug and analyze binary programs.
+
+  **Main features:**
+  - Program debugging
+  - Memory analysis
+  - Disassembly
+  - Breakpoint setting
+
+  **Use cases:**
+  - Binary analysis
+  - Vulnerability research
+  - Reverse engineering
+  - Program debugging
+parameters:
+  - name: "binary"
+    type: "string"
+    description: "Path to the binary file to analyze"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "commands"
+    type: "string"
+    description: "GDB commands to execute (semicolon-separated)"
+    required: false
+    flag: "-ex"
+    format: "flag"
+  - name: "script_file"
+    type: "string"
+    description: "GDB script file path"
+    required: false
+    flag: "-x"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional gdb arguments. Used to pass gdb options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

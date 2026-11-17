@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: veritysec-api
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: VERITYSEC_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://veritysec.vercel.app
+      - key: PORT
+        value: "8765"
+      - key: GIN_MODE
+        value: release
+      - key: TLS_ENABLED
+        value: "false"
+    healthCheckPath: /api/health

@@ -1,0 +1,45 @@
+name: "one-gadget"
+command: "one_gadget"
+enabled: true
+short_description: "Tool for finding one-shot RCE gadgets in libc"
+description: |
+  One-gadget is a tool for finding one-shot RCE gadgets in libc.
+
+  **Key features:**
+  - One-shot gadget search
+  - Constraint level checking
+  - Multiple libc support
+
+  **Use cases:**
+  - CTF challenges
+  - Exploit development
+  - ROP chain simplification
+  - Security research
+parameters:
+  - name: "libc_path"
+    type: "string"
+    description: "Path to the libc binary file"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "level"
+    type: "int"
+    description: "Constraint level (0, 1, 2)"
+    required: false
+    flag: "-l"
+    format: "flag"
+    default: 1
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional one-gadget arguments. Used to pass one-gadget options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

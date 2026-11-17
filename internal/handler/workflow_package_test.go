@@ -1,0 +1,104 @@
+package handler
+
+import (
+	"bytes"
+	"encoding/json"
+	"mime/multipart"
+	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"veritysec/internal/database"
+	"veritysec/internal/security"
+	workflowrunner "veritysec/internal/workflow"
+	workflowpkg "veritysec/internal/workflow/package"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+)
+
+func TestWorkflowPackageHandlerInspectionAndCreateImport(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	workflowrunner.SetCheckpointDir(filepath.Join(t.TempDir(), "workflow-checkpoints"))
+	db, err := database.NewDB(filepath.Join(t.TempDir(), "workflow-package-handler.db"), zap.NewNop())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	h := NewWorkflowHandler(db, zap.NewNop())
+	pkg, _, err := workflowpkg.Export(workflowpkg.Document{ID: "wf-api", Name: "API workflow", Version: 4, Enabled: true, UpdatedAt: time.Now().UTC(), GraphJSON: `{"nodes":[{"id":"start-1","type":"start","label":"Start","position":{"x":0,"y":0},"config":{}},{"id":"out-1","type":"output","label":"Output","position":{"x":0,"y":120},"config":{"output_key":"result","source_binding":{"from":"inputs","field":"message"}}}],"edges":[{"id":"e1","source":"start-1","target":"out-1"}],"config":{"schema_version":1}}`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	part, err := writer.CreateFormFile("file", "wf-api.csapkg.zip")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := part.Write(pkg); err != nil {
+		t.Fatal(err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/workflow-package-inspections", &body)
+	c.Request.Header.Set("Content-Type", writer.FormDataContentType())
+	c.Set(security.ContextSessionKey, security.Session{UserID: "user-1"})
+	h.CreatePackageInspection(c)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("inspection status=%d body=%s", w.Code, w.Body.String())
+	}
+	var inspected struct {
+		Inspection struct {
+			ID string `json:"id"`
+		} `json:"inspection"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &inspected); err != nil {
+		t.Fatal(err)
+	}
+	applyBody := bytes.NewBufferString(`{"inspection_id":"` + inspected.Inspection.ID + `","resolution":{"action":"create","new_workflow_id":""},"confirm_overwrite":false}`)
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/workflow-package-imports", applyBody)
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("Idempotency-Key", uuid.NewString())
+	c.Set(security.ContextSessionKey, security.Session{UserID: "user-1"})
+	h.ApplyPackageImport(c)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("import status=%d body=%s", w.Code, w.Body.String())
+	}
+	saved, _ := db.GetWorkflowDefinition("wf-api")
+	if saved == nil || saved.Version != 1 {
+		t.Fatalf("saved=%#v", saved)
+	}
+}
+
+func TestWorkflowHandlerGenerateDraft(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewWorkflowHandler(nil, zap.NewNop())
+	body := bytes.NewBufferString(`{"prompt":"Scan the target asset's ports; if high-risk ports are found, run the hardening script, and finally output a report","options":{"include_objective":true},"available_tools":[{"key":"nmap","name":"nmap","enabled":true}]}`)
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/workflows/generate-draft", body)
+	c.Request.Header.Set("Content-Type", "application/json")
+	h.GenerateDraft(c)
+	if w.Code != http.StatusBadGateway {
+		t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+	}
+	var resp struct {
+		Error string `json:"error"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(resp.Error, "LLM generation failed") {
+		t.Fatalf("unexpected error: %#v", resp.Error)
+	}
+}

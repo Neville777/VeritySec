@@ -1,0 +1,821 @@
+package handler
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+
+	"veritysec/internal/multiagent"
+	"veritysec/internal/openai"
+	"veritysec/internal/runlease"
+	"veritysec/internal/security"
+)
+
+// ErrTaskCancelled: error when the user cancels the task
+var ErrTaskCancelled = errors.New("agent task cancelled by user")
+
+// ErrTaskAlreadyRunning: a task is already running in the session
+var ErrTaskAlreadyRunning = errors.New("agent task already running for conversation")
+
+// shouldPersistEinoAgentTraceAfterRunError: whether to still write last_react_* for the next turn's loadHistoryFromAgentTrace when an Eino-related Run does not return successfully.
+// Current policy: whether the run ends normally, abnormally, or is stopped by the user, the last usable trace is kept whenever possible,
+// so that continuing in the same session can resume from the original context instead of falling back to message-text history only.
+func shouldPersistEinoAgentTraceAfterRunError(baseCtx context.Context) bool {
+	return true
+}
+
+// AgentTask describes a running Agent task
+type AgentTask struct {
+	RunID            string `json:"runId"`
+	CleanupError     string `json:"cleanupError,omitempty"`
+	processes        *security.ProcessScope
+	workers          *runlease.Scope
+	IsolationBackend string `json:"isolationBackend,omitempty"`
+	finishing        chan struct{}
+	stopping         chan struct{}
+	cancelRequested  bool
+	finalStatus      string
+	ConversationID   string    `json:"conversationId"`
+	Title            string    `json:"title,omitempty"`
+	Message          string    `json:"message,omitempty"`
+	StartedAt        time.Time `json:"startedAt"`
+	Status           string    `json:"status"`
+	CancellingAt     time.Time `json:"-"` // Time it entered the cancelling state, used to clean up tasks that are stuck for a long time
+
+	// ActiveMCPExecutionID: the executionId of the MCP tool currently running (memory only; used by "interrupt and continue" = stop only the current tool)
+	ActiveMCPExecutionID string `json:"-"`
+
+	// InterruptContinueNote: the supplementary note the user enters in the dialog for "interrupt and continue" when there is no MCP (written before Cancel; read and cleared in the continuation round)
+	InterruptContinueNote string `json:"-"`
+
+	// activeEinoExecuteCancel: the cancel function of the Eino filesystem execute currently in progress (runs in parallel with MCP tools, used for interrupt and continue)
+	activeEinoExecuteCancel context.CancelFunc
+	// activeEinoExecuteAbortNote: the user note written by AbortActiveEinoExecute, merged into the tool result when execute finishes
+	activeEinoExecuteAbortNote string
+
+	// hitlCognition: context for the HITL/audit Agent to read during the current run (the user's original words + thinking, excluding session history)
+	hitlCognition *hitlCognitionState
+
+	// agentRuntimeCancel: wrapper around the native Eino ADK AgentCancelFunc; when cancelling a task it is triggered first, then the context fallback is used.
+	agentRuntimeCancel        func(error) bool
+	agentRuntimeCancelVersion uint64
+
+	// agentTurnLoopInterrupt: the Eino TurnLoop user-supplement push hook; for interrupt and continue, the supplement is preferably queued as a new turn item.
+	agentTurnLoopInterrupt        func(string) bool
+	agentTurnLoopInterruptVersion uint64
+
+	cancel func(error)
+}
+
+// RegisterRunningTool implements mcp.ToolRunRegistry: registers the current executionId of this session when a tool starts.
+func (m *AgentTaskManager) RegisterRunningTool(conversationID, executionID string) {
+	conversationID = strings.TrimSpace(conversationID)
+	executionID = strings.TrimSpace(executionID)
+	if conversationID == "" || executionID == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		t.ActiveMCPExecutionID = executionID
+	}
+}
+
+// UnregisterRunningTool clears the registration when the tool ends (only if the id still matches, to avoid concurrent mix-ups).
+func (m *AgentTaskManager) UnregisterRunningTool(conversationID, executionID string) {
+	conversationID = strings.TrimSpace(conversationID)
+	executionID = strings.TrimSpace(executionID)
+	if conversationID == "" || executionID == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		if t.ActiveMCPExecutionID == executionID {
+			t.ActiveMCPExecutionID = ""
+		}
+	}
+}
+
+// RegisterActiveEinoExecute registers the in-progress Eino filesystem execute (only one per session at a time).
+func (m *AgentTaskManager) RegisterActiveEinoExecute(conversationID string, cancel context.CancelFunc) {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" || cancel == nil {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		t.activeEinoExecuteCancel = cancel
+		t.activeEinoExecuteAbortNote = ""
+	}
+}
+
+// UnregisterActiveEinoExecute clears the registration after execute ends normally or is cancelled.
+func (m *AgentTaskManager) UnregisterActiveEinoExecute(conversationID string) {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		t.activeEinoExecuteCancel = nil
+		t.activeEinoExecuteAbortNote = ""
+	}
+}
+
+// ConversationIDForActiveMCPExecution looks up the session ID from the currently registered tool executionId (used by the MCP monitoring page to terminate by executionId).
+func (m *AgentTaskManager) ConversationIDForActiveMCPExecution(executionID string) string {
+	executionID = strings.TrimSpace(executionID)
+	if executionID == "" {
+		return ""
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for convID, t := range m.tasks {
+		if t != nil && t.ActiveMCPExecutionID == executionID {
+			return convID
+		}
+	}
+	return ""
+}
+
+// ConversationIDForActiveEinoExecute returns the session ID of the only session running an Eino execute; returns empty when multiple sessions run in parallel.
+func (m *AgentTaskManager) ConversationIDForActiveEinoExecute() (string, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var found string
+	count := 0
+	for convID, t := range m.tasks {
+		if t != nil && t.activeEinoExecuteCancel != nil {
+			found = convID
+			count++
+		}
+	}
+	if count == 1 {
+		return found, true
+	}
+	return "", false
+}
+
+// AbortActiveEinoExecute terminates the current Eino execute and stages the user note (consistent with terminating an MCP tool).
+func (m *AgentTaskManager) AbortActiveEinoExecute(conversationID, note string) bool {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" {
+		return false
+	}
+	m.mu.Lock()
+	t, ok := m.tasks[conversationID]
+	if !ok || t == nil || t.activeEinoExecuteCancel == nil {
+		m.mu.Unlock()
+		return false
+	}
+	t.activeEinoExecuteAbortNote = strings.TrimSpace(note)
+	cancel := t.activeEinoExecuteCancel
+	m.mu.Unlock()
+	cancel()
+	return true
+}
+
+// TakeEinoExecuteAbortNote reads and clears the execute termination note (called once when execute finishes).
+func (m *AgentTaskManager) TakeEinoExecuteAbortNote(conversationID string) string {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" {
+		return ""
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		n := t.activeEinoExecuteAbortNote
+		t.activeEinoExecuteAbortNote = ""
+		return n
+	}
+	return ""
+}
+
+// SetInterruptContinueNote writes the user supplement note before issuing the ErrInterruptContinue cancel (memory only).
+func (m *AgentTaskManager) SetInterruptContinueNote(conversationID, note string) {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		t.InterruptContinueNote = note
+	}
+}
+
+// TakeInterruptContinueNote reads and clears the supplement note (called once when the continuation starts).
+func (m *AgentTaskManager) TakeInterruptContinueNote(conversationID string) string {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" {
+		return ""
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		n := t.InterruptContinueNote
+		t.InterruptContinueNote = ""
+		return n
+	}
+	return ""
+}
+
+// BindTaskCancel replaces the cancel function bound to the context within the same running task (used to install a new baseCtx after an interrupt and continue).
+func (m *AgentTaskManager) BindTaskCancel(conversationID string, cancel context.CancelCauseFunc) {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" || cancel == nil {
+		return
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		t.cancel = func(err error) {
+			cancel(err)
+		}
+	}
+}
+
+// BindAgentRuntimeCancel registers the native Eino cancel hook of the current run segment.
+func (m *AgentTaskManager) BindAgentRuntimeCancel(conversationID string, cancel func(error) bool) func() {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" || cancel == nil {
+		return func() {}
+	}
+	m.mu.Lock()
+	t, ok := m.tasks[conversationID]
+	if !ok || t == nil {
+		m.mu.Unlock()
+		return func() {}
+	}
+	t.agentRuntimeCancelVersion++
+	version := t.agentRuntimeCancelVersion
+	t.agentRuntimeCancel = cancel
+	m.mu.Unlock()
+
+	return func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		if cur, exists := m.tasks[conversationID]; exists && cur != nil && cur.agentRuntimeCancelVersion == version {
+			cur.agentRuntimeCancel = nil
+		}
+	}
+}
+
+// BindAgentTurnLoopInterrupt registers the Eino TurnLoop user-supplement queueing hook of the current running task.
+func (m *AgentTaskManager) BindAgentTurnLoopInterrupt(conversationID string, push func(string) bool) func() {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" || push == nil {
+		return func() {}
+	}
+	m.mu.Lock()
+	t, ok := m.tasks[conversationID]
+	if !ok || t == nil {
+		m.mu.Unlock()
+		return func() {}
+	}
+	t.agentTurnLoopInterruptVersion++
+	version := t.agentTurnLoopInterruptVersion
+	t.agentTurnLoopInterrupt = push
+	m.mu.Unlock()
+
+	return func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		if cur, exists := m.tasks[conversationID]; exists && cur != nil && cur.agentTurnLoopInterruptVersion == version {
+			cur.agentTurnLoopInterrupt = nil
+		}
+	}
+}
+
+// ActiveMCPExecutionID returns the tool executionId in progress for the current session; empty string if none.
+func (m *AgentTaskManager) ActiveMCPExecutionID(conversationID string) string {
+	conversationID = strings.TrimSpace(conversationID)
+	if conversationID == "" {
+		return ""
+	}
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if t, ok := m.tasks[conversationID]; ok && t != nil {
+		return strings.TrimSpace(t.ActiveMCPExecutionID)
+	}
+	return ""
+}
+
+// CompletedTask: a completed task (used for history)
+type CompletedTask struct {
+	CleanupError     string    `json:"cleanupError,omitempty"`
+	IsolationBackend string    `json:"isolationBackend,omitempty"`
+	RunID            string    `json:"runId"`
+	ConversationID   string    `json:"conversationId"`
+	Title            string    `json:"title,omitempty"`
+	Message          string    `json:"message,omitempty"`
+	StartedAt        time.Time `json:"startedAt"`
+	CompletedAt      time.Time `json:"completedAt"`
+	Status           string    `json:"status"`
+}
+
+// AgentTaskManager manages the running Agent tasks
+type AgentTaskManager struct {
+	mu               sync.RWMutex
+	tasks            map[string]*AgentTask
+	completedTasks   []*CompletedTask // Recently completed task history
+	maxHistorySize   int              // Maximum number of history records
+	historyRetention time.Duration    // History retention time
+	eventBus         *TaskEventBus    // Optional: close the mirrored SSE subscriptions when the task ends
+	// toolCanceler terminates the MCP tools still running in the session when the user stops the whole task or the session ends (not "interrupt and continue").
+	toolCanceler func(conversationID string)
+	shuttingDown bool
+	shutdown     chan struct{}
+	shutdownOnce sync.Once
+}
+
+const (
+	// cancellingStuckThreshold: if a task stays in "cancelling" longer than this, it is forcibly removed from the running list. Normal cancellation returns within the current step,
+	// anything longer is treated as stuck, and the session is released as soon as possible. A common practice is to release within 30-60s.
+	cancellingStuckThreshold = 45 * time.Second
+	// cancellingStuckThresholdLegacy: fallback duration used when CancellingAt was not recorded and StartedAt is used instead
+	cancellingStuckThresholdLegacy = 2 * time.Minute
+	cleanupInterval                = 15 * time.Second // Together with the threshold above, the task is removed within about 60s at most
+)
+
+// NewAgentTaskManager creates the task manager
+func NewAgentTaskManager() *AgentTaskManager {
+	m := &AgentTaskManager{
+		tasks:            make(map[string]*AgentTask),
+		shutdown:         make(chan struct{}),
+		completedTasks:   make([]*CompletedTask, 0),
+		maxHistorySize:   50,             // Keep at most 50 history records
+		historyRetention: 24 * time.Hour, // Keep for 24 hours
+	}
+	go m.runStuckCancellingCleanup()
+	return m
+}
+
+// SetTaskEventBus sets the task event bus (shares the same instance with AgentHandler).
+func (m *AgentTaskManager) SetTaskEventBus(b *TaskEventBus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.eventBus = b
+}
+
+// SetToolCanceler sets the callback that terminates MCP tools still running when the whole task is stopped or the session ends (injected by AgentHandler).
+func (m *AgentTaskManager) SetToolCanceler(fn func(conversationID string)) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.toolCanceler = fn
+}
+
+// GetTask returns the running task (nil if none).
+func (m *AgentTaskManager) GetTask(conversationID string) *AgentTask {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.tasks[conversationID]
+}
+
+// GetTaskSnapshot returns a read-only copy of the running task for status display, avoiding reading mutable task fields outside the lock.
+func (m *AgentTaskManager) GetTaskSnapshot(conversationID string) *AgentTask {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	task := m.tasks[conversationID]
+	if task == nil {
+		return nil
+	}
+	snapshot := *task
+	snapshot.IsolationBackend = task.processes.IsolationBackend()
+	return &snapshot
+}
+
+// runStuckCancellingCleanup periodically forcibly ends tasks that stay in "cancelling" for a long time, so they do not hang and block new messages
+func (m *AgentTaskManager) runStuckCancellingCleanup() {
+	ticker := time.NewTicker(cleanupInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-m.shutdown:
+			return
+		case <-ticker.C:
+			m.cleanupStuckCancelling()
+		}
+	}
+}
+
+func (m *AgentTaskManager) cleanupStuckCancelling() {
+	m.mu.Lock()
+	type pendingFinish struct{ id, runID, status string }
+	var toFinish []pendingFinish
+	now := time.Now()
+	for id, task := range m.tasks {
+		if task.Status == "cleanup_failed" {
+			toFinish = append(toFinish, pendingFinish{id, task.RunID, task.finalStatus})
+			continue
+		}
+		if task.Status != "cancelling" {
+			continue
+		}
+		var elapsed time.Duration
+		if !task.CancellingAt.IsZero() {
+			elapsed = now.Sub(task.CancellingAt)
+			if elapsed < cancellingStuckThreshold {
+				continue
+			}
+		} else {
+			elapsed = now.Sub(task.StartedAt)
+			if elapsed < cancellingStuckThresholdLegacy {
+				continue
+			}
+		}
+		toFinish = append(toFinish, pendingFinish{id, task.RunID, "cancelled"})
+	}
+	m.mu.Unlock()
+	for _, pending := range toFinish {
+		_ = m.FinishTaskRun(pending.id, pending.runID, pending.status)
+	}
+}
+
+// StartTask registers and starts a new task
+func (m *AgentTaskManager) StartTask(conversationID, message string, cancel context.CancelCauseFunc) (*AgentTask, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.shuttingDown {
+		return nil, errors.New("task manager is shutting down")
+	}
+	if _, exists := m.tasks[conversationID]; exists {
+		return nil, ErrTaskAlreadyRunning
+	}
+
+	scope := security.NewProcessScope()
+	task := &AgentTask{
+		RunID: scope.ID, processes: scope, workers: runlease.New(),
+		ConversationID: conversationID,
+		Message:        message,
+		StartedAt:      time.Now(),
+		Status:         "running",
+		cancel: func(err error) {
+			if cancel != nil {
+				cancel(err)
+			}
+		},
+	}
+
+	m.tasks[conversationID] = task
+	task.hitlCognition = &hitlCognitionState{UserMessage: strings.TrimSpace(message)}
+	return task, nil
+}
+
+// CancelTask cancels the task of the specified session. If the task is already cancelling, it still returns (true, nil) so the API is idempotent and the frontend does not report an error.
+func (m *AgentTaskManager) CancelTask(conversationID string, cause error) (bool, error) {
+	m.mu.Lock()
+	task, exists := m.tasks[conversationID]
+	if !exists {
+		m.mu.Unlock()
+		return false, nil
+	}
+
+	// If it is already in the cancellation flow, treat it as success (idempotent), to avoid the frontend reporting "task not found" on repeated clicks
+	if task.Status == "cancelling" || task.finishing != nil {
+		m.mu.Unlock()
+		return true, nil
+	}
+
+	if cause == nil || errors.Is(cause, ErrTaskCancelled) {
+		task.cancelRequested = true
+		task.finalStatus = "cancelled"
+	}
+
+	// ErrInterruptContinue: only cuts the current reasoning step; the handler then continues the run, and does not enter the long "cancelling" state.
+	if cause != nil && errors.Is(cause, multiagent.ErrInterruptContinue) {
+		task.Status = "running"
+	} else {
+		task.Status = "cancelling"
+		task.CancellingAt = time.Now()
+	}
+	if cause != nil && errors.Is(cause, ErrTaskCancelled) {
+		task.InterruptContinueNote = ""
+	}
+	cancel := task.cancel
+	if cause == nil {
+		cause = ErrTaskCancelled
+	}
+	interruptPush := task.agentTurnLoopInterrupt
+	interruptNote := task.InterruptContinueNote
+	runtimeCancel := task.agentRuntimeCancel
+	activeExecuteCancel := task.activeEinoExecuteCancel
+	if !errors.Is(cause, multiagent.ErrInterruptContinue) {
+		task.processes.Seal()
+		task.workers.Seal()
+		task.stopping = make(chan struct{})
+		defer close(task.stopping)
+	}
+	var toolCanceler func(string)
+	if errors.Is(cause, ErrTaskCancelled) {
+		toolCanceler = m.toolCanceler
+	}
+	m.mu.Unlock()
+
+	if errors.Is(cause, multiagent.ErrInterruptContinue) && interruptPush != nil && interruptPush(interruptNote) {
+		m.mu.Lock()
+		if cur, exists := m.tasks[conversationID]; exists && cur != nil {
+			cur.InterruptContinueNote = ""
+		}
+		m.mu.Unlock()
+		return true, nil
+	}
+
+	runtimeHandled := false
+	if runtimeCancel != nil {
+		runtimeHandled = runtimeCancel(cause)
+	}
+	// "Stop completely" must also cancel the host context: even if the native Agent Cancel has been accepted,
+	// it may only return at a safe point or report a timeout, so the task must not be kept alive on that basis.
+	// Interrupt and continue keeps its original semantics: when the native cancel has been handled, the runtime is responsible for recovery.
+	if cancel != nil && (!runtimeHandled || errors.Is(cause, ErrTaskCancelled)) {
+		cancel(cause)
+	}
+	if toolCanceler != nil {
+		toolCanceler(conversationID)
+	}
+	if !errors.Is(cause, multiagent.ErrInterruptContinue) {
+		task.workers.Cancel()
+		if activeExecuteCancel != nil {
+			activeExecuteCancel()
+		}
+		return true, task.processes.Close()
+	}
+	return true, nil
+}
+
+// UpdateTaskStatus updates the task status without deleting the task (used to update the status before sending events)
+func (m *AgentTaskManager) UpdateTaskStatus(conversationID string, status string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	task, exists := m.tasks[conversationID]
+	if !exists {
+		return
+	}
+
+	if task.finishing != nil || task.Status == "cleanup_failed" {
+		return
+	}
+	if task.cancelRequested {
+		status = "cancelled"
+	}
+	switch status {
+	case "completed", "cancelled", "failed", "timeout":
+		task.finalStatus = status
+		task.Status = "cleaning"
+		task.processes.Seal()
+		task.workers.Seal()
+	default:
+		if status != "" {
+			task.Status = status
+		}
+	}
+}
+
+// BindProcessScope snapshots ownership once at task start. Continuations must
+// derive from this context, never resolve ownership again using conversation ID.
+func (m *AgentTaskManager) BindProcessScope(ctx context.Context, conversationID, runID string) context.Context {
+	// Put the conversation ID into ctx: the %session_id% placeholder in custom request headers is replaced accordingly,
+	// so that headers such as x-opencode-session sent for each conversation match the current session.
+	ctx = openai.WithSessionID(ctx, conversationID)
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if task := m.tasks[conversationID]; task != nil && task.RunID == runID {
+		return runlease.WithScope(security.WithProcessScope(ctx, task.processes), task.workers)
+	}
+	// Fail closed if a task disappeared before its execution context was bound.
+	scope := security.NewProcessScope()
+	scope.Seal()
+	workers := runlease.New()
+	workers.Seal()
+	return runlease.WithScope(security.WithProcessScope(ctx, scope), workers)
+}
+
+// FinishTask is retained for callers that operate on the current task. Owners
+// use FinishTaskRun, so a delayed defer cannot finish a newer conversation run.
+func (m *AgentTaskManager) FinishTask(conversationID string, finalStatus string) {
+	m.mu.RLock()
+	task := m.tasks[conversationID]
+	m.mu.RUnlock()
+	if task != nil {
+		_ = m.FinishTaskRun(conversationID, task.RunID, finalStatus)
+	}
+}
+
+func (m *AgentTaskManager) FinishTaskRun(conversationID, runID, finalStatus string) error {
+	m.mu.Lock()
+	task := m.tasks[conversationID]
+	if task == nil || task.RunID != runID {
+		m.mu.Unlock()
+		return nil
+	}
+	if task.stopping != nil {
+		select {
+		case <-task.stopping:
+		default:
+			stopping := task.stopping
+			m.mu.Unlock()
+			<-stopping
+			return m.FinishTaskRun(conversationID, runID, finalStatus)
+		}
+	}
+	if task.finishing != nil {
+		done := task.finishing
+		m.mu.Unlock()
+		<-done
+		m.mu.RLock()
+		cleanupError := task.CleanupError
+		m.mu.RUnlock()
+		if cleanupError != "" {
+			return errors.New(cleanupError)
+		}
+		return nil
+	}
+	if task.cancelRequested {
+		finalStatus = "cancelled"
+	}
+	done := make(chan struct{})
+	task.finishing = done
+	task.finalStatus = finalStatus
+	task.Status = "cleaning"
+	task.processes.Seal()
+	task.workers.Seal()
+	toolCanceler := m.toolCanceler
+	activeCancel := task.activeEinoExecuteCancel
+	cancel := task.cancel
+	bus := m.eventBus
+	m.mu.Unlock()
+
+	// Keep the conversation occupied throughout cleanup, including callbacks.
+	if cancel != nil {
+		cancel(nil)
+	}
+	if toolCanceler != nil {
+		toolCanceler(conversationID)
+	}
+	if activeCancel != nil {
+		activeCancel()
+	}
+	task.workers.Cancel()
+	processErr := task.processes.Close()
+	waitCtx, waitCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	workerErr := task.workers.Wait(waitCtx)
+	waitCancel()
+	cleanupErr := errors.Join(processErr, workerErr)
+	if processErr != nil && errors.Is(workerErr, runlease.ErrUnconfirmed) {
+		// A simultaneous local failure must not be labelled as local completion.
+		cleanupErr = fmt.Errorf("local cleanup: %w; remote state: %v", processErr, workerErr)
+	}
+	// The local worker has returned, but remote notification cancellation is
+	// not an acknowledgement. Preserve an actionable history/tool status.
+	unconfirmed := processErr == nil && errors.Is(workerErr, runlease.ErrUnconfirmed)
+	if unconfirmed {
+		finalStatus = "cleanup_unconfirmed"
+	}
+	cleanupMessage := ""
+	if cleanupErr != nil {
+		cleanupMessage = cleanupErr.Error()
+	}
+	if (cleanupErr == nil || unconfirmed) && bus != nil {
+		// Subscribers must receive completion only after local processes are reaped.
+		payload, _ := json.Marshal(StreamEvent{Type: "done", Data: map[string]interface{}{"conversationId": conversationID, "runId": runID, "status": finalStatus, "cleanupError": cleanupMessage}})
+		bus.Publish(conversationID, append(append([]byte("data: "), payload...), '\n', '\n'))
+		bus.CloseConversation(conversationID)
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	defer close(done)
+	if cleanupErr != nil && !unconfirmed {
+		task.Status = "cleanup_failed"
+		task.CleanupError = cleanupErr.Error()
+		task.finishing = nil
+		return cleanupErr
+	}
+	task.CleanupError = ""
+	if unconfirmed {
+		task.CleanupError = cleanupErr.Error()
+	}
+	task.Status = finalStatus
+	m.completedTasks = append(m.completedTasks, &CompletedTask{
+		RunID: task.RunID, CleanupError: task.CleanupError, IsolationBackend: task.processes.IsolationBackend(), ConversationID: task.ConversationID, Message: task.Message,
+		StartedAt: task.StartedAt, CompletedAt: time.Now(), Status: finalStatus,
+	})
+	m.cleanupHistory()
+	delete(m.tasks, conversationID)
+	return cleanupErr
+}
+
+// Shutdown rejects new tasks before cancelling and reaping existing task jobs.
+func (m *AgentTaskManager) Shutdown() {
+	m.mu.Lock()
+	m.shuttingDown = true
+	m.shutdownOnce.Do(func() { close(m.shutdown) })
+	tasks := make([]*AgentTask, 0, len(m.tasks))
+	for _, task := range m.tasks {
+		tasks = append(tasks, task)
+		task.processes.Seal()
+		task.workers.Seal()
+	}
+	m.mu.Unlock()
+	var wg sync.WaitGroup
+	for _, task := range tasks {
+		wg.Add(1)
+		go func(task *AgentTask) {
+			defer wg.Done()
+			_, _ = m.CancelTask(task.ConversationID, ErrTaskCancelled)
+			_ = m.FinishTaskRun(task.ConversationID, task.RunID, "cancelled")
+		}(task)
+	}
+	wg.Wait()
+}
+
+// cleanupHistory removes expired history records
+func (m *AgentTaskManager) cleanupHistory() {
+	now := time.Now()
+	cutoffTime := now.Add(-m.historyRetention)
+
+	// Filter out expired records
+	validTasks := make([]*CompletedTask, 0, len(m.completedTasks))
+	for _, task := range m.completedTasks {
+		if task.CompletedAt.After(cutoffTime) {
+			validTasks = append(validTasks, task)
+		}
+	}
+
+	// If the count still exceeds the maximum, keep only the newest
+	if len(validTasks) > m.maxHistorySize {
+		// Sort by completion time and keep the newest
+		// Since entries are appended, the newest are at the end, so take the last N directly
+		start := len(validTasks) - m.maxHistorySize
+		validTasks = validTasks[start:]
+	}
+
+	m.completedTasks = validTasks
+}
+
+// GetActiveTasks returns all running tasks
+func (m *AgentTaskManager) GetActiveTasks() []*AgentTask {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	result := make([]*AgentTask, 0, len(m.tasks))
+	for _, task := range m.tasks {
+		result = append(result, &AgentTask{
+			RunID: task.RunID, CleanupError: task.CleanupError, IsolationBackend: task.processes.IsolationBackend(),
+			ConversationID: task.ConversationID,
+			Message:        task.Message,
+			StartedAt:      task.StartedAt,
+			Status:         task.Status,
+		})
+	}
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].StartedAt.Equal(result[j].StartedAt) {
+			return result[i].ConversationID < result[j].ConversationID
+		}
+		return result[i].StartedAt.Before(result[j].StartedAt)
+	})
+	return result
+}
+
+// GetCompletedTasks returns the recent completed task history
+func (m *AgentTaskManager) GetCompletedTasks() []*CompletedTask {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	// Clean up expired records (read lock only, does not affect other operations)
+	// Note: cleanupHistory cannot be called directly here, because a write lock is required
+	// So expired records are filtered out when returning
+	now := time.Now()
+	cutoffTime := now.Add(-m.historyRetention)
+
+	result := make([]*CompletedTask, 0, len(m.completedTasks))
+	for _, task := range m.completedTasks {
+		if task.CompletedAt.After(cutoffTime) {
+			result = append(result, task)
+		}
+	}
+
+	// Sort by completion time in descending order (newest first)
+	// Since entries are appended, the newest are at the end and need to be reversed
+	for i, j := 0, len(result)-1; i < j; i, j = i+1, j-1 {
+		result[i], result[j] = result[j], result[i]
+	}
+
+	// Limit the number of results returned
+	if len(result) > m.maxHistorySize {
+		result = result[:m.maxHistorySize]
+	}
+
+	return result
+}

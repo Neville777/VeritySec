@@ -1,0 +1,71 @@
+name: "bloodhound"
+command: "bloodhound-python"
+enabled: true
+short_description: "Active Directory attack path analysis and visualization tool"
+description: |
+  BloodHound is an Active Directory attack path analysis and visualization tool. It collects domain information and analyzes attack paths.
+
+  **Main features:**
+  - Domain information collection
+  - Attack path analysis
+  - Permission relationship visualization
+  - Shortest attack path calculation
+  - High-risk path identification
+
+  **Use cases:**
+  - Active Directory security assessment
+  - Post-exploitation
+  - Domain environment auditing
+  - Red team exercises
+
+  **Notes:**
+  - Requires domain user credentials
+  - Requires Neo4j database support
+  - The collection process may take a long time
+  - Recommended for use in authorized environments only
+parameters:
+  - name: "domain"
+    type: "string"
+    description: "Target domain name"
+    required: false
+    flag: "-d"
+    format: "flag"
+  - name: "username"
+    type: "string"
+    description: "Domain username"
+    required: false
+    flag: "-u"
+    format: "flag"
+  - name: "password"
+    type: "string"
+    description: "Domain user password"
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "collection_method"
+    type: "string"
+    description: "Collection method (All, ACL, DCOM, LocalAdmin, RDP, etc.)"
+    required: false
+    default: "All"
+    flag: "-c"
+    format: "flag"
+  - name: "dc"
+    type: "string"
+    description: "Domain controller IP address"
+    required: false
+    flag: "-dc"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional bloodhound arguments. Used to pass bloodhound options not defined in this parameter list.
+
+      **Example values:**
+      - Add common argument examples based on tool characteristics
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Make sure the argument format is correct to avoid command injection
+      - This value is appended directly to the end of the command
+    required: false
+    format: "positional"

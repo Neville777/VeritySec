@@ -1,0 +1,63 @@
+name: "steghide"
+command: "steghide"
+enabled: true
+short_description: "Steganography analysis tool"
+description: |
+  Steghide is a steganography tool for hiding data in image and audio files.
+
+  **Key features:**
+  - Data hiding
+  - Data extraction
+  - Information viewing
+  - Password protection
+
+  **Use cases:**
+  - Steganography analysis
+  - Data hiding detection
+  - Forensic analysis
+  - CTF challenges
+parameters:
+  - name: "action"
+    type: "string"
+    description: "Action type (extract, embed, info)"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "cover_file"
+    type: "string"
+    description: "Cover file path (used with -cf for embed/info actions)"
+    required: false
+    flag: "-cf"
+    format: "flag"
+  - name: "embed_file"
+    type: "string"
+    description: "File to embed (for the embed action)"
+    required: false
+    flag: "-ef"
+    format: "flag"
+  - name: "passphrase"
+    type: "string"
+    description: "Passphrase"
+    required: false
+    flag: "-p"
+    format: "flag"
+  - name: "stego_file"
+    type: "string"
+    description: "Stego file path (output for embed, input for extract)"
+    required: false
+    flag: "-sf"
+    format: "flag"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional steghide arguments. Used to pass steghide options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    format: "positional"

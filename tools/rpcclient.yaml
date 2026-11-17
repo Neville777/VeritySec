@@ -1,0 +1,115 @@
+name: "rpcclient"
+command: "python3"
+args:
+  - "-c"
+  - |
+    import shlex
+    import subprocess
+    import sys
+
+    if len(sys.argv) < 2:
+        sys.stderr.write("Missing target address\n")
+        sys.exit(1)
+
+    target = sys.argv[1]
+    username = sys.argv[2] if len(sys.argv) > 2 else ""
+    password = sys.argv[3] if len(sys.argv) > 3 else ""
+    domain = sys.argv[4] if len(sys.argv) > 4 else ""
+    commands = sys.argv[5] if len(sys.argv) > 5 else ""
+    extra = sys.argv[6] if len(sys.argv) > 6 else ""
+
+    cmd = ["rpcclient"]
+
+    if username:
+        cred = username
+        if password:
+            cred = f"{username}%{password}"
+        cmd.extend(["-U", cred])
+    elif password:
+        # If only a password is provided, still try to connect with an empty username
+        cmd.extend(["-U", f"%{password}"])
+
+    if domain:
+        cmd.extend(["-W", domain])
+
+    if commands:
+        cmd.extend(["-c", commands])
+
+    if extra:
+        cmd.extend(shlex.split(extra))
+
+    cmd.append(target)
+
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.stdout:
+        sys.stdout.write(proc.stdout)
+    if proc.stderr:
+        sys.stderr.write(proc.stderr)
+    sys.exit(proc.returncode)
+enabled: true
+short_description: "RPC enumeration tool"
+description: |
+  Rpcclient is an RPC client tool used to enumerate information from Windows/Samba systems.
+
+  **Key features:**
+  - RPC enumeration
+  - User and group enumeration
+  - Domain information queries
+  - System information collection
+
+  **Use cases:**
+  - Windows system penetration testing
+  - Samba enumeration
+  - Domain environment reconnaissance
+  - Security testing
+parameters:
+  - name: "target"
+    type: "string"
+    description: "Target IP address"
+    required: true
+    position: 0
+    format: "positional"
+  - name: "username"
+    type: "string"
+    description: "Username"
+    required: false
+    default: ""
+    position: 1
+    format: "positional"
+  - name: "password"
+    type: "string"
+    description: "Password"
+    required: false
+    default: ""
+    position: 2
+    format: "positional"
+  - name: "domain"
+    type: "string"
+    description: "Domain name"
+    required: false
+    default: ""
+    position: 3
+    format: "positional"
+  - name: "commands"
+    type: "string"
+    description: "RPC commands (semicolon-separated)"
+    required: false
+    default: "enumdomusers;enumdomgroups;querydominfo"
+    position: 4
+    format: "positional"
+  - name: "additional_args"
+    type: "string"
+    description: |
+      Additional rpcclient arguments. Used to pass rpcclient options not defined in the parameter list.
+
+      **Example values:**
+      - Add common parameter examples based on tool features
+
+      **Notes:**
+      - Separate multiple arguments with spaces
+      - Ensure argument format is correct to avoid command injection
+      - This parameter is appended directly to the end of the command
+    required: false
+    default: ""
+    position: 5
+    format: "positional"
