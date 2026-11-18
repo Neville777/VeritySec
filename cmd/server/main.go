@@ -106,15 +106,15 @@ func main() {
 	if envHost := os.Getenv("HOST"); envHost != "" {
 		cfg.Server.Host = envHost
 	}
-	port := cfg.Server.Port
 	if envPort := os.Getenv("PORT"); envPort != "" {
 		if p, pErr := strconv.Atoi(envPort); pErr == nil && p > 0 {
-			port = p
+			cfg.Server.Port = p
 		}
 	}
-	if port <= 0 {
-		port = 8080
+	if cfg.Server.Port <= 0 {
+		cfg.Server.Port = 8080
 	}
+	port := cfg.Server.Port
 	if os.Getenv("TLS_ENABLED") == "false" {
 		cfg.Server.TLSEnabled = false
 		cfg.Server.TLSAutoSelfSign = false

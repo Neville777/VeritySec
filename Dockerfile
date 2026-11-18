@@ -27,6 +27,7 @@ RUN mkdir -p /app/data /app/data/evidence /app/log /app/chat_uploads /app/tmp/re
 
 ENV GIN_MODE=release
 ENV TLS_ENABLED=false
+ENV HOST=0.0.0.0
 
 EXPOSE 8765
 
