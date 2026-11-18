@@ -125,10 +125,10 @@ func (db *DB) BootstrapRBAC(adminPasswordHash string, permissions map[string]str
 		if key == "" {
 			continue
 		}
-		if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_permissions (key, description, created_at) VALUES (?, ?, ?)`, key, desc, now); err != nil {
+		if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_permissions (key, description, created_at) VALUES (?, ?, ?)`), key, desc, now); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`UPDATE rbac_permissions SET description = ? WHERE key = ?`, desc, key); err != nil {
+		if _, err := tx.Exec(CompatQuery(`UPDATE rbac_permissions SET description = ? WHERE key = ?`), desc, key); err != nil {
 			return err
 		}
 	}
@@ -154,10 +154,10 @@ func (db *DB) BootstrapRBAC(adminPasswordHash string, permissions map[string]str
 		return err
 	}
 	for _, key := range stalePermissionKeys {
-		if _, err := tx.Exec(`DELETE FROM rbac_role_permissions WHERE permission_key = ?`, key); err != nil {
+		if _, err := tx.Exec(CompatQuery(`DELETE FROM rbac_role_permissions WHERE permission_key = ?`), key); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`DELETE FROM rbac_permissions WHERE key = ?`, key); err != nil {
+		if _, err := tx.Exec(CompatQuery(`DELETE FROM rbac_permissions WHERE key = ?`), key); err != nil {
 			return err
 		}
 	}
@@ -169,34 +169,34 @@ func (db *DB) BootstrapRBAC(adminPasswordHash string, permissions map[string]str
 		{ID: RBACSystemRoleViewer, Name: "Read-only User", Description: "Read-only access to authorized resources", Scope: RBACScopeAssigned, IsSystem: true},
 	}
 	for _, role := range systemRoles {
-		if _, err := tx.Exec(`
+		if _, err := tx.Exec(CompatQuery(`
 			INSERT INTO rbac_roles (id, name, description, scope, is_system, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(id) DO UPDATE SET name=excluded.name, description=excluded.description, scope=excluded.scope, is_system=excluded.is_system, updated_at=excluded.updated_at
-		`, role.ID, role.Name, role.Description, role.Scope, boolToInt(role.IsSystem), now, now); err != nil {
+		`), role.ID, role.Name, role.Description, role.Scope, boolToInt(role.IsSystem), now, now); err != nil {
 			return err
 		}
 	}
 
 	var userCount int
-	if err := tx.QueryRow(`SELECT COUNT(*) FROM rbac_users`).Scan(&userCount); err != nil {
+	if err := tx.QueryRow(CompatQuery(`SELECT COUNT(*) FROM rbac_users`)).Scan(&userCount); err != nil {
 		return err
 	}
 	if userCount == 0 {
 		if strings.TrimSpace(adminPasswordHash) == "" {
 			return errors.New("admin password hash is required for initial bootstrap")
 		}
-		if _, err := tx.Exec(`
+		if _, err := tx.Exec(CompatQuery(`
 			INSERT INTO rbac_users (id, username, display_name, password_hash, enabled, is_builtin, created_at, updated_at)
 			VALUES (?, 'admin', 'Administrator', ?, 1, 1, ?, ?)
-		`, "admin", adminPasswordHash, now, now); err != nil {
+		`), "admin", adminPasswordHash, now, now); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES ('admin', ?, ?)`, RBACSystemRoleAdmin, now); err != nil {
+		if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES ('admin', ?, ?)`), RBACSystemRoleAdmin, now); err != nil {
 			return err
 		}
 	} else if strings.TrimSpace(adminPasswordHash) != "" {
-		if _, err := tx.Exec(`UPDATE rbac_users SET password_hash = ?, updated_at = ? WHERE username = 'admin' AND is_builtin = 1 AND (password_hash = '' OR password_hash IS NULL)`, adminPasswordHash, now); err != nil {
+		if _, err := tx.Exec(CompatQuery(`UPDATE rbac_users SET password_hash = ?, updated_at = ? WHERE username = 'admin' AND is_builtin = 1 AND (password_hash = '' OR password_hash IS NULL)`), adminPasswordHash, now); err != nil {
 			return err
 		}
 	}
@@ -213,22 +213,22 @@ func grantSystemRolePermissions(tx *sql.Tx, permissions map[string]string) error
 	// System roles are immutable and owned by the application. Rebuild their
 	// grants deterministically so policy tightening also removes permissions
 	// seeded by older versions instead of leaving stale INSERT OR IGNORE rows.
-	if _, err := tx.Exec(`DELETE FROM rbac_role_permissions WHERE role_id IN (?, ?, ?, ?)`, RBACSystemRoleAdmin, RBACSystemRoleOperator, RBACSystemRoleAuditor, RBACSystemRoleViewer); err != nil {
+	if _, err := tx.Exec(CompatQuery(`DELETE FROM rbac_role_permissions WHERE role_id IN (?, ?, ?, ?)`), RBACSystemRoleAdmin, RBACSystemRoleOperator, RBACSystemRoleAuditor, RBACSystemRoleViewer); err != nil {
 		return err
 	}
 	for key := range permissions {
-		if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`, RBACSystemRoleAdmin, key, now); err != nil {
+		if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`), RBACSystemRoleAdmin, key, now); err != nil {
 			return err
 		}
 		switch {
 		case key == "auth:self":
 			for _, roleID := range []string{RBACSystemRoleOperator, RBACSystemRoleAuditor, RBACSystemRoleViewer} {
-				if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`, roleID, key, now); err != nil {
+				if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`), roleID, key, now); err != nil {
 					return err
 				}
 			}
 		case key == "audit:read":
-			if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`, RBACSystemRoleAuditor, key, now); err != nil {
+			if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`), RBACSystemRoleAuditor, key, now); err != nil {
 				return err
 			}
 		case strings.HasPrefix(key, "rbac:"), strings.HasPrefix(key, "config:"), strings.HasPrefix(key, "terminal:"), strings.HasPrefix(key, "audit:"), strings.HasPrefix(key, "storage:"):
@@ -243,12 +243,12 @@ func grantSystemRolePermissions(tx *sql.Tx, permissions map[string]string) error
 			continue
 		case strings.HasSuffix(key, ":read"):
 			for _, roleID := range []string{RBACSystemRoleOperator, RBACSystemRoleAuditor, RBACSystemRoleViewer} {
-				if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`, roleID, key, now); err != nil {
+				if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`), roleID, key, now); err != nil {
 					return err
 				}
 			}
 		default:
-			if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`, RBACSystemRoleOperator, key, now); err != nil {
+			if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`), RBACSystemRoleOperator, key, now); err != nil {
 				return err
 			}
 		}
@@ -883,10 +883,10 @@ func (db *DB) AssignResourcesToUser(userID, resourceType string, resourceIDs []s
 
 	var created int64
 	for _, resourceID := range uniqueIDs {
-		result, err := tx.Exec(`
+		result, err := tx.Exec(InsertIgnore(`
 			INSERT OR IGNORE INTO rbac_resource_assignments (id, user_id, resource_type, resource_id, created_at)
 			VALUES (?, ?, ?, ?, ?)
-		`, uuid.NewString(), userID, resourceType, resourceID, time.Now())
+		`), uuid.NewString(), userID, resourceType, resourceID, time.Now())
 		if err != nil {
 			return 0, err
 		}
@@ -964,10 +964,10 @@ func (db *DB) AssignResourcesToUserAuto(userID string, resourceIDs []string) (in
 
 	var created int64
 	for _, resourceID := range uniqueIDs {
-		result, err := tx.Exec(`
+		result, err := tx.Exec(InsertIgnore(`
 			INSERT OR IGNORE INTO rbac_resource_assignments (id, user_id, resource_type, resource_id, created_at)
 			VALUES (?, ?, ?, ?, ?)
-		`, uuid.NewString(), userID, detected[resourceID], resourceID, time.Now())
+		`), uuid.NewString(), userID, detected[resourceID], resourceID, time.Now())
 		if err != nil {
 			return 0, nil, err
 		}
@@ -1092,7 +1092,7 @@ func (db *DB) UpsertRBACRole(id, name, description, scope string, permissionKeys
 		if permissionExists == 0 {
 			return nil, fmt.Errorf("unknown permission: %s", key)
 		}
-		if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`, id, key, now); err != nil {
+		if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_role_permissions (role_id, permission_key, created_at) VALUES (?, ?, ?)`), id, key, now); err != nil {
 			return nil, err
 		}
 	}
@@ -1151,7 +1151,7 @@ func (db *DB) CreateRBACUser(username, displayName, passwordHash string, enabled
 		if roleID == "" {
 			continue
 		}
-		if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES (?, ?, ?)`, id, roleID, now); err != nil {
+		if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES (?, ?, ?)`), id, roleID, now); err != nil {
 			return nil, err
 		}
 	}
@@ -1192,7 +1192,7 @@ func (db *DB) UpdateRBACUser(userID, displayName string, enabled *bool, roleIDs 
 			if roleID == "" {
 				continue
 			}
-			if _, err := tx.Exec(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES (?, ?, ?)`, userID, roleID, time.Now()); err != nil {
+			if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES (?, ?, ?)`), userID, roleID, time.Now()); err != nil {
 				return err
 			}
 		}

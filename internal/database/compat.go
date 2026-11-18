@@ -95,6 +95,27 @@ func ConcatWS(sep string, cols ...string) string {
 	return strings.Join(parts, " || '"+sep+"' || ")
 }
 
+// InsertIgnore rewrites "INSERT OR IGNORE INTO" (SQLite) to
+// "INSERT INTO ... ON CONFLICT DO NOTHING" (standard SQL) when in Postgres mode,
+// and also rewrites ? placeholders to $N.
+// In SQLite mode, it returns the query unchanged.
+func InsertIgnore(query string) string {
+	if IsPostgresMode() {
+		q := strings.Replace(query, "INSERT OR IGNORE INTO", "INSERT INTO", 1)
+		if !strings.Contains(q, "ON CONFLICT") {
+			q = strings.TrimRight(q, " \t\n\r")
+			q += " ON CONFLICT DO NOTHING"
+		}
+		return RewritePlaceholders(q)
+	}
+	return query
+}
+
+// CompatQuery rewrites ? placeholders for Postgres. Alias for RewritePlaceholders.
+func CompatQuery(query string) string {
+	return RewritePlaceholders(query)
+}
+
 // DBType returns "postgres" or "sqlite" for conditional logic.
 func DBType() string {
 	if os.Getenv("DATABASE_URL") != "" {
