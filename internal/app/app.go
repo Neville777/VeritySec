@@ -139,10 +139,8 @@ func New(cfg *config.Config, log *logger.Logger, configPath string) (*App, error
 
 	// auth manager (mount RBAC after database init)
 	authManager := security.NewAuthManager(cfg.Auth.SessionDurationHours)
-	if generatedPassword, err := authManager.AttachRBACStore(db); err != nil {
+	if err := authManager.AttachRBACStore(db); err != nil {
 		return nil, fmt.Errorf("failed to initialize RBAC: %w", err)
-	} else if generatedPassword != "" {
-		config.PrintBootstrapAdminPassword(generatedPassword)
 	}
 	for platform, userID := range cfg.Robots.ServiceAccountUserIDs() {
 		user, userErr := db.GetRBACUserByID(userID)
@@ -1077,6 +1075,8 @@ func setupRoutes(
 	authRoutes := api.Group("/auth")
 	loginRL := security.NewRateLimiter(10, 1*time.Minute)
 	{
+		authRoutes.GET("/setup", authHandler.NeedsSetup)
+		authRoutes.POST("/setup", security.RateLimitMiddleware(loginRL), authHandler.Setup)
 		authRoutes.POST("/login", security.RateLimitMiddleware(loginRL), authHandler.Login)
 		authRoutes.POST("/logout", security.AuthMiddleware(authManager), authHandler.Logout)
 		authRoutes.POST("/change-password", security.AuthMiddleware(authManager), security.RequirePermission("auth:self"), authHandler.ChangePassword)

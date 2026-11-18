@@ -48,6 +48,69 @@ type changePasswordRequest struct {
 	NewPassword string `json:"newPassword"`
 }
 
+// NeedsSetup returns whether the first user still needs to be created.
+func (h *AuthHandler) NeedsSetup(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"needsSetup": h.manager.NeedsSetup()})
+}
+
+// Setup creates the first user as admin. Only works when no users exist.
+func (h *AuthHandler) Setup(c *gin.Context) {
+	var req loginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
+		return
+	}
+	req.Username = strings.TrimSpace(req.Username)
+	if req.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
+		return
+	}
+	password := strings.TrimSpace(req.Password)
+	if len(password) < 8 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
+		return
+	}
+
+	token, expiresAt, err := h.manager.SetupFirstUser(req.Username, password)
+	if err != nil {
+		if err.Error() == "setup already completed" {
+			c.JSON(http.StatusConflict, gin.H{"error": "setup already completed, please login"})
+			return
+		}
+		if h.logger != nil {
+			h.logger.Error("first user setup failed", zap.Error(err))
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "setup failed"})
+		return
+	}
+	session, _ := h.manager.ValidateToken(token)
+
+	if h.audit != nil {
+		h.audit.Record(c, audit.Entry{
+			Category: "auth",
+			Action:   "setup",
+			Result:   "success",
+			Message:  "first user created as admin",
+			Actor:    session.Username,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token":               token,
+		"expires_at":          expiresAt.UTC().Format(time.RFC3339),
+		"session_duration_hr": h.manager.SessionDurationHours(),
+		"user": gin.H{
+			"id":           session.UserID,
+			"username":     session.Username,
+			"display_name": session.DisplayName,
+		},
+		"roles":             session.Roles,
+		"permissions":       permissionKeys(session.Permissions),
+		"permission_scopes": session.PermissionScopes,
+		"scope":             session.Scope,
+	})
+}
+
 // Login verifies password and returns a session token.
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest

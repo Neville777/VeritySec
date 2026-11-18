@@ -330,7 +330,16 @@ async function submitLogin(event) {
     }
 
     try {
-        const response = await fetch(getApiBase() + '/api/auth/login', {
+        let endpoint = '/api/auth/login';
+        try {
+            const setupCheck = await fetch(getApiBase() + '/api/auth/setup');
+            const setupStatus = await setupCheck.json().catch(() => ({}));
+            if (setupStatus.needsSetup) {
+                endpoint = '/api/auth/setup';
+            }
+        } catch (_) { /* fall through to login */ }
+
+        const response = await fetch(getApiBase() + endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -773,6 +782,17 @@ async function initializeApp() {
 
     clearAuthStorage();
     showLoginOverlay();
+
+    try {
+        const setupCheck = await fetch(getApiBase() + '/api/auth/setup');
+        const setupStatus = await setupCheck.json().catch(() => ({}));
+        if (setupStatus.needsSetup) {
+            const subtitle = document.querySelector('.login-subtitle');
+            const submitBtn = document.querySelector('.login-submit');
+            if (subtitle) subtitle.textContent = 'Create your admin account to get started';
+            if (submitBtn) submitBtn.textContent = 'Create Admin & Sign In';
+        }
+    } catch (_) { /* ignore */ }
 }
 
 // User menu control

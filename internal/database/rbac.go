@@ -182,10 +182,7 @@ func (db *DB) BootstrapRBAC(adminPasswordHash string, permissions map[string]str
 	if err := tx.QueryRow(CompatQuery(`SELECT COUNT(*) FROM rbac_users`)).Scan(&userCount); err != nil {
 		return err
 	}
-	if userCount == 0 {
-		if strings.TrimSpace(adminPasswordHash) == "" {
-			return errors.New("admin password hash is required for initial bootstrap")
-		}
+	if userCount == 0 && strings.TrimSpace(adminPasswordHash) != "" {
 		if _, err := tx.Exec(CompatQuery(`
 			INSERT INTO rbac_users (id, username, display_name, password_hash, enabled, is_builtin, created_at, updated_at)
 			VALUES (?, 'admin', 'Administrator', ?, 1, 1, ?, ?)
@@ -195,7 +192,7 @@ func (db *DB) BootstrapRBAC(adminPasswordHash string, permissions map[string]str
 		if _, err := tx.Exec(InsertIgnore(`INSERT OR IGNORE INTO rbac_user_roles (user_id, role_id, created_at) VALUES ('admin', ?, ?)`), RBACSystemRoleAdmin, now); err != nil {
 			return err
 		}
-	} else if strings.TrimSpace(adminPasswordHash) != "" {
+	} else if userCount > 0 && strings.TrimSpace(adminPasswordHash) != "" {
 		if _, err := tx.Exec(CompatQuery(`UPDATE rbac_users SET password_hash = ?, updated_at = ? WHERE username = 'admin' AND is_builtin = 1 AND (password_hash = '' OR password_hash IS NULL)`), adminPasswordHash, now); err != nil {
 			return err
 		}
@@ -261,10 +258,10 @@ func (db *DB) GetRBACUserByUsername(username string) (*RBACUser, error) {
 	if username == "" {
 		return nil, sql.ErrNoRows
 	}
-	return db.scanRBACUser(db.QueryRow(`
+	return db.scanRBACUser(db.QueryRow(CompatQuery(`
 		SELECT id, username, display_name, password_hash, enabled, is_builtin, created_at, updated_at
 		FROM rbac_users WHERE username = ?
-	`, username))
+	`), username))
 }
 
 func (db *DB) GetRBACUserByID(id string) (*RBACUser, error) {
@@ -272,10 +269,10 @@ func (db *DB) GetRBACUserByID(id string) (*RBACUser, error) {
 	if id == "" {
 		return nil, sql.ErrNoRows
 	}
-	return db.scanRBACUser(db.QueryRow(`
+	return db.scanRBACUser(db.QueryRow(CompatQuery(`
 		SELECT id, username, display_name, password_hash, enabled, is_builtin, created_at, updated_at
 		FROM rbac_users WHERE id = ?
-	`, id))
+	`), id))
 }
 
 func (db *DB) scanRBACUser(row *sql.Row) (*RBACUser, error) {
@@ -297,13 +294,13 @@ func (db *DB) ResolveRBACAccess(userID string) (*RBACAccess, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.Query(`
+	rows, err := db.Query(CompatQuery(`
 		SELECT r.id, r.name, r.description, r.scope, r.is_system, r.created_at, r.updated_at
 		FROM rbac_roles r
 		JOIN rbac_user_roles ur ON ur.role_id = r.id
 		WHERE ur.user_id = ?
 		ORDER BY r.is_system DESC, r.name ASC
-	`, userID)
+	`), userID)
 	if err != nil {
 		return nil, err
 	}
@@ -329,13 +326,13 @@ func (db *DB) ResolveRBACAccess(userID string) (*RBACAccess, error) {
 		return nil, err
 	}
 
-	prows, err := db.Query(`
+	prows, err := db.Query(CompatQuery(`
 		SELECT rp.permission_key, r.scope
 		FROM rbac_role_permissions rp
 		JOIN rbac_user_roles ur ON ur.role_id = rp.role_id
 		JOIN rbac_roles r ON r.id = rp.role_id
 		WHERE ur.user_id = ?
-	`, userID)
+	`), userID)
 	if err != nil {
 		return nil, err
 	}
@@ -1140,10 +1137,10 @@ func (db *DB) CreateRBACUser(username, displayName, passwordHash string, enabled
 		return nil, err
 	}
 	defer func() { _ = tx.Rollback() }()
-	if _, err := tx.Exec(`
+	if _, err := tx.Exec(CompatQuery(`
 		INSERT INTO rbac_users (id, username, display_name, password_hash, enabled, is_builtin, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, 0, ?, ?)
-	`, id, username, strings.TrimSpace(displayName), passwordHash, boolToInt(enabled), now, now); err != nil {
+	`), id, username, strings.TrimSpace(displayName), passwordHash, boolToInt(enabled), now, now); err != nil {
 		return nil, err
 	}
 	for _, roleID := range roleIDs {

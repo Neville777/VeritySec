@@ -54,38 +54,67 @@ func NewAuthManager(sessionDurationHours int) *AuthManager {
 	}
 }
 
-// AttachRBACStore enables multi-user RBAC authentication. When no users exist yet,
-// it bootstraps the built-in admin account and returns the generated initial password.
-func (a *AuthManager) AttachRBACStore(db *database.DB) (generatedAdminPassword string, err error) {
+// AttachRBACStore enables multi-user RBAC authentication. It seeds roles and
+// permissions but does NOT create a default admin user — the first user is
+// created through the /api/auth/setup endpoint from the frontend.
+func (a *AuthManager) AttachRBACStore(db *database.DB) error {
 	if db == nil {
-		return "", errors.New("database is required for authentication")
+		return errors.New("database is required for authentication")
 	}
 
-	needsAdminPassword, err := db.RBACNeedsAdminPassword()
-	if err != nil {
-		return "", err
-	}
-
-	adminPasswordHash := ""
-	if needsAdminPassword {
-		generatedAdminPassword, err = GenerateStrongPassword(24)
-		if err != nil {
-			return "", err
-		}
-		adminPasswordHash, err = HashPassword(generatedAdminPassword)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	if err := db.BootstrapRBAC(adminPasswordHash, PermissionCatalog); err != nil {
-		return "", err
+	if err := db.BootstrapRBAC("", PermissionCatalog); err != nil {
+		return err
 	}
 
 	a.mu.Lock()
 	a.db = db
 	a.mu.Unlock()
-	return generatedAdminPassword, nil
+	return nil
+}
+
+// NeedsSetup returns true when no users exist yet.
+func (a *AuthManager) NeedsSetup() bool {
+	a.mu.RLock()
+	db := a.db
+	a.mu.RUnlock()
+	if db == nil {
+		return false
+	}
+	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM rbac_users`).Scan(&count); err != nil {
+		return false
+	}
+	return count == 0
+}
+
+// SetupFirstUser creates the first user as admin and returns a session token.
+func (a *AuthManager) SetupFirstUser(username, password string) (string, time.Time, error) {
+	a.mu.RLock()
+	db := a.db
+	a.mu.RUnlock()
+	if db == nil {
+		return "", time.Time{}, errors.New("authentication store is not configured")
+	}
+
+	var count int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM rbac_users`).Scan(&count); err != nil {
+		return "", time.Time{}, err
+	}
+	if count > 0 {
+		return "", time.Time{}, errors.New("setup already completed")
+	}
+
+	hash, err := HashPassword(password)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	_, err = db.CreateRBACUser(username, username, hash, true, []string{"admin"})
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	return a.Authenticate(username, password)
 }
 
 // Authenticate validates the password and creates a new session.
