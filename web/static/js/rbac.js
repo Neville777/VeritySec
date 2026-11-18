@@ -1237,6 +1237,8 @@ function openRbacUserModal(userId = '') {
     document.getElementById('rbac-username').disabled = !!user;
     document.getElementById('rbac-display-name').value = user ? (user.displayName || user.display_name || '') : '';
     document.getElementById('rbac-password').value = '';
+    const emailInput = document.getElementById('rbac-email');
+    if (emailInput) emailInput.value = user ? (user.email || '') : '';
     const enabledInput = document.getElementById('rbac-user-enabled');
     enabledInput.checked = user ? !!user.enabled : true;
     enabledInput.disabled = rbacUserIsBuiltin(user) && enabledInput.checked;
@@ -1301,9 +1303,11 @@ async function saveRbacUser() {
     await rbacRun(async () => {
         const id = document.getElementById('rbac-user-id').value;
         const isEdit = !!id;
+        const emailEl = document.getElementById('rbac-email');
         const payload = {
             display_name: document.getElementById('rbac-display-name').value.trim(),
             password: document.getElementById('rbac-password').value,
+            email: emailEl ? emailEl.value.trim() : '',
             enabled: document.getElementById('rbac-user-enabled').checked,
         };
         if (!isEdit) {
