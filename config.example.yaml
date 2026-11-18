@@ -14,7 +14,7 @@
 version: "v1.7.24"
 # Server configuration
 server:
-  host: 127.0.0.1 # Listen address; 0.0.0.0 means listen on all network interfaces
+  host: 0.0.0.0 # Listen address; 0.0.0.0 means listen on all network interfaces
   port: 8080 # Service port; when TLS is not enabled this is http://localhost:8080
   # Exact Origins of other trusted web integrations. Chromium browser extensions are detected automatically and need no configuration; do not use wildcards.
   # cors_allowed_origins:

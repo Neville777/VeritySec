@@ -103,6 +103,9 @@ func main() {
 		config.ApplyDevHTTPSBootstrap(cfg)
 	}
 
+	if envHost := os.Getenv("HOST"); envHost != "" {
+		cfg.Server.Host = envHost
+	}
 	port := cfg.Server.Port
 	if envPort := os.Getenv("PORT"); envPort != "" {
 		if p, pErr := strconv.Atoi(envPort); pErr == nil && p > 0 {
