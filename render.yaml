@@ -5,13 +5,15 @@ services:
     plan: starter
     region: oregon
     dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/health
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: VERITYSEC_SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: https://veritysec.vercel.app
+        sync: false
       - key: HOST
         value: "0.0.0.0"
       - key: PORT
@@ -20,4 +22,9 @@ services:
         value: release
       - key: TLS_ENABLED
         value: "false"
-    healthCheckPath: /api/health
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_ADDRESS
+        sync: false
+      - key: VERITYSEC_APP_URL
+        sync: false

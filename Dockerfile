@@ -23,12 +23,19 @@ COPY --from=builder /app/roles ./roles
 COPY --from=builder /app/skills ./skills
 COPY --from=builder /app/agents ./agents
 
-RUN mkdir -p /app/data /app/data/evidence /app/log /app/chat_uploads /app/tmp/reduction /app/tmp/workspace /app/tmp/c2
+RUN addgroup -S app && adduser -S -G app -h /app -s /sbin/nologin app \
+ && mkdir -p /app/data /app/data/evidence /app/log /app/chat_uploads /app/tmp/reduction /app/tmp/workspace /app/tmp/c2 \
+ && chown -R app:app /app/data /app/log /app/chat_uploads /app/tmp
 
-ENV GIN_MODE=release
-ENV TLS_ENABLED=false
-ENV HOST=0.0.0.0
+ENV GIN_MODE=release \
+    TLS_ENABLED=false \
+    HOST=0.0.0.0 \
+    PORT=8765
 
+USER app
 EXPOSE 8765
 
-CMD ["./veritysec"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8765/api/health || exit 1
+
+CMD ["./veritysec", "--http"]
